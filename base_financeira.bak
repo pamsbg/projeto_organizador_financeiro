@@ -1,0 +1,717 @@
+id,date,reference_date,title,amount,category,installment_info,owner,ref_dt
+c9898c26-5c55-45bb-8313-17a1e5941775,2026-01-21,2026-02-01 00:00:00,Alquimia Farmacia de M - Parcela 2/3,48.83,Saúde/Farmácia,Parcela 2/3,Renato,2026-02-01
+661ebfe9-2e22-4d69-9013-28fbf9eeef81,2026-01-21,2026-02-01 00:00:00,Amazon - Parcela 3/5,55.98,Pessoal/Vestuário,Parcela 3/5,Renato,2026-02-01
+2f8b84e5-5d87-4256-b67b-fa7a0770abc5,2026-01-21,2026-02-01 00:00:00,Amazon - Parcela 9/10,31.9,Pessoal/Vestuário,Parcela 9/10,Renato,2026-02-01
+a2ad9206-9b6e-409c-83ee-bd3324b8361b,2026-01-21,2026-02-01 00:00:00,Aneto Food Service,20.28,Moradia,,Renato,2026-02-01
+64849f41-bffa-4b7e-8649-611a6b8d36c7,2026-01-21,2026-02-01 00:00:00,Bichosdomato - Parcela 2/4,357.5,Pets,Parcela 2/4,Renato,2026-02-01
+99bc38b5-dcc7-4116-b052-a6dee9b9ee75,2026-01-21,2026-02-01 00:00:00,Brau S Magazine - Parcela 3/9,53.83,Pessoal/Vestuário,Parcela 3/9,Renato,2026-02-01
+93e4d921-baf1-493f-b556-1609f0404ea0,2026-01-21,2026-02-01 00:00:00,Bruno Turtienski Rossini 41088413870 - 9/10,95.07,Outros,,Renato,2026-02-01
+2b8c1ee6-0481-419d-ba82-f6f2333acbe9,2026-01-21,2026-02-01 00:00:00,Chama Supermercado,101.56,Alimentação (Mercado/Sacolão),,Renato,2026-02-01
+e236aecf-0ac5-4214-9f7c-793fe5da0bdd,2026-01-21,2026-02-01 00:00:00,Curso*de*Extensao - Parcela 8/12,848.88,Educação/Cursos,Parcela 8/12,Renato,2026-02-01
+0d856589-164d-4518-a37c-904166561d07,2026-01-21,2026-02-01 00:00:00,Drogaria Sao Paulo - Parcela 3/3,61.84,Saúde/Farmácia,Parcela 3/3,Renato,2026-02-01
+00a3f05c-96de-4f1e-8347-e4588028d299,2026-01-21,2026-02-01 00:00:00,Drogasil3673 - Parcela 2/3,43.47,Moradia,Parcela 2/3,Renato,2026-02-01
+95e087e9-8e39-4589-b257-22c463bd63f7,2026-01-21,2026-02-01 00:00:00,Drogasil3673 - Parcela 2/3,57.83,Moradia,Parcela 2/3,Renato,2026-02-01
+09ce24db-d1c2-4e4c-81f4-12e6840c5695,2026-01-21,2026-02-01 00:00:00,Gatito Cafe Bar,15.0,Outros,,Renato,2026-02-01
+4338bc41-1fe6-4334-bf13-821239d082f4,2026-01-21,2026-02-01 00:00:00,Hospital Veterinario F - Parcela 4/8,113.75,Saúde/Farmácia,Parcela 4/8,Renato,2026-02-01
+ae0bcb31-f76b-466c-afd0-c0825df938bd,2026-01-21,2026-02-01 00:00:00,Ippo Cozinha Eireli,59.5,Outros,,Renato,2026-02-01
+6636b91c-5632-4c53-85d9-71a9d3449314,2026-01-21,2026-02-01 00:00:00,Jim.Com* Gleiton Gabr - Parcela 2/3,130.0,Outros,Parcela 2/3,Renato,2026-02-01
+51440707-6a63-4aae-a5e5-7e8c5abd37b0,2026-01-21,2026-02-01 00:00:00,Lj do Mec - Parcela 5/5,62.22,Outros,Parcela 5/5,Renato,2026-02-01
+e5239296-c4ea-41ea-8384-eeb904868cf1,2026-01-21,2026-02-01 00:00:00,Mercadao de Carne,73.71,Outros,,Renato,2026-02-01
+ddb538ba-7e46-46a2-924d-84fde2204438,2026-01-21,2026-02-01 00:00:00,Mercadolivre*Ebazarco - Parcela 9/12,58.25,Alimentação (Mercado/Sacolão),Parcela 9/12,Renato,2026-02-01
+5e60c2b5-29ae-44c9-a2cf-33b7669d3224,2026-01-21,2026-02-01 00:00:00,Mercadolivre*Megamamu - Parcela 9/12,291.65,Alimentação (Mercado/Sacolão),Parcela 9/12,Renato,2026-02-01
+a117dd6a-edf0-405f-a0ad-d4f98a41311e,2026-01-21,2026-02-01 00:00:00,Pg *Giga Distribuidora - Parcela 3/10,35.56,Outros,Parcela 3/10,Renato,2026-02-01
+4882d3c0-4d0d-4e82-9706-87c96eab2595,2026-01-21,2026-02-01 00:00:00,Promofarma,99.06,Saúde/Farmácia,,Renato,2026-02-01
+c8e55160-2da8-4e83-b13b-4dc6b6680d61,2026-01-21,2026-02-01 00:00:00,Promofarma - Parcela 5/6,83.22,Saúde/Farmácia,Parcela 5/6,Renato,2026-02-01
+57d1e3ee-6d82-46a9-a360-b6104b4ac8a7,2026-01-21,2026-02-01 00:00:00,Rossi - Parcela 2/2,153.87,Outros,Parcela 2/2,Renato,2026-02-01
+3a5e9fd7-f31a-4b09-b36a-440427b8e8fa,2026-01-21,2026-02-01 00:00:00,Shopee *Caladosolinda - Parcela 2/3,61.65,Pessoal/Vestuário,Parcela 2/3,Renato,2026-02-01
+502ce925-64e0-4537-8aa0-a1475cd5a707,2026-01-21,2026-02-01 00:00:00,Shopee *Gswitchgames - Parcela 2/12,236.16,Pessoal/Vestuário,Parcela 2/12,Renato,2026-02-01
+6423b0a0-24c6-4245-9cef-2c3290a764f7,2026-01-21,2026-02-01 00:00:00,Smart Economy - Parcela 3/3,66.66,Outros,Parcela 3/3,Renato,2026-02-01
+02da9b87-8e60-448d-899d-217ab85dbac1,2026-01-21,2026-02-01 00:00:00,Super Doce - Parcela 2/2,124.54,Outros,Parcela 2/2,Renato,2026-02-01
+740f8297-a050-42ff-9dca-dfcab76b6b6f,2026-01-21,2026-02-01 00:00:00,Times Office Santana - Parcela 2/4,434.0,Moradia,Parcela 2/4,Renato,2026-02-01
+3a26d783-7023-408a-827d-d2cfc603e018,2026-01-21,2026-02-01 00:00:00,W R Car - Parcela 12/12,405.69,Transporte (Combustível/Manutenção),Parcela 12/12,Renato,2026-02-01
+2212ca9d-0637-49fe-8876-82327e6ebc91,2026-01-21,2026-02-01 00:00:00,Yume Perfumaria - Parcela 2/2,32.62,Pessoal/Vestuário,Parcela 2/2,Renato,2026-02-01
+1c1707c1-cc3c-4cfb-a0dd-bacebaf8149f,2026-01-22,2026-02-01 00:00:00,Aneto Food Service,20.53,Moradia,,Renato,2026-02-01
+48f88e02-358d-448f-91af-c44fc582302e,2026-01-22,2026-02-01 00:00:00,Panif Anjo da Guarda,27.11,Outros,,Renato,2026-02-01
+3da0a360-d5dd-456d-ab02-5c8ad5b013bd,2026-01-22,2026-02-01 00:00:00,Pizzaria Hippos,205.01,Lazer/Restaurantes,,Renato,2026-02-01
+b2c63e5c-1991-4478-8e03-27fe7f7e98ae,2026-01-25,2026-02-01 00:00:00,Chama Supermercado,66.15,Alimentação (Mercado/Sacolão),,Renato,2026-02-01
+2ccf3fd8-c6f4-495a-a8dd-47e488b6fbec,2026-01-25,2026-02-01 00:00:00,Choperia e Restaurante,139.7,Lazer/Restaurantes,,Renato,2026-02-01
+3dc19cb0-52c9-497c-90b9-d75e55fcd25f,2026-01-25,2026-02-01 00:00:00,Dl*Google Aprova,18.14,Assinaturas/Serviços,,Renato,2026-02-01
+19e4f777-52af-46c0-a5ae-96f709481f03,2026-01-25,2026-02-01 00:00:00,Dl*Google Aprova,25.99,Assinaturas/Serviços,,Renato,2026-02-01
+bc442526-b44c-487f-9105-030b715611f6,2026-01-25,2026-02-01 00:00:00,M P Laham,97.1,Outros,,Renato,2026-02-01
+677ae3c6-1451-4ec3-9f9b-6298abc4a64c,2026-01-25,2026-02-01 00:00:00,Pegpagexpressltda,14.99,Outros,,Renato,2026-02-01
+8733b56c-d4c9-4f8a-a0e4-1641e47faed0,2026-01-26,2026-02-01 00:00:00,Mp *Loteriasonline681,12.0,Lazer/Restaurantes,,Renato,2026-02-01
+a5e7d26b-589b-460b-aba7-b61131b5e88d,2026-01-27,2026-02-01 00:00:00,Ifd*la Braciera Pizzar,222.19,Lazer/Restaurantes,,Renato,2026-02-01
+5d3bc84e-1dbe-45d9-8416-109c6eb79d65,2026-01-27,2026-02-01 00:00:00,Uber - NuPay,32.98,Transporte (Uber/99),,Renato,2026-02-01
+da059b51-41ae-492a-9ca5-d597a8056cf2,2026-01-28,2026-02-01 00:00:00,Aps Comercio de Salgad,192.0,Outros,,Renato,2026-02-01
+9f0fc82f-feba-4a40-acc7-d7239bdfadee,2026-01-28,2026-02-01 00:00:00,Pagamento recebido,-17152.72,Pagamento/Crédito,,Renato,2026-02-01
+b516e0c0-ede8-4dd7-82bf-f6ba5ea1362a,2026-01-28,2026-02-01 00:00:00,Petz Digital,115.63,Pets,,Renato,2026-02-01
+51f4157e-c754-4f09-a4d9-5ca7b4f770df,2026-01-28,2026-02-01 00:00:00,Pmbmetro*1t260127-41gu,5.4,Outros,,Renato,2026-02-01
+4527269d-70c7-4689-8eea-56de6d85d4a5,2026-01-28,2026-02-01 00:00:00,Pmbmetro*1t260127-V2qx,5.4,Outros,,Renato,2026-02-01
+d89888dd-d8c5-434f-ae65-be379f66e868,2026-01-29,2026-02-01 00:00:00,Cravina Comercio de Pr,27.0,Outros,,Renato,2026-02-01
+e715873e-3b03-4349-851e-06949116ddd8,2026-01-29,2026-02-01 00:00:00,EBW*Spotify - NuPay,12.9,Assinaturas/Serviços,,Renato,2026-02-01
+d6dea61c-9317-42b7-950e-31113a8ad0e8,2026-01-29,2026-02-01 00:00:00,Ikesaki - Parcela 1/3,43.39,Outros,Parcela 1/3,Renato,2026-02-01
+85974d7e-1c0a-41b2-9e8a-52d20866a5c6,2026-01-29,2026-02-01 00:00:00,Mp *Loteriasonlinevgm,18.0,Lazer/Restaurantes,,Renato,2026-02-01
+35d3066c-68eb-46d2-b2d9-c94127dcbf0e,2026-01-29,2026-02-01 00:00:00,Pmbmetro*1t260128-0azt,5.4,Outros,,Renato,2026-02-01
+df03bf5f-3b4e-41b1-8161-fec96681fcbc,2026-01-29,2026-02-01 00:00:00,Pmbmetro*1t260128-E0wa,5.4,Outros,,Renato,2026-02-01
+c8d51f24-5418-4f58-8fb4-fc92446a8579,2026-01-31,2026-02-01 00:00:00,Hnk Br Bebidas Ltda.,342.07,Outros,,Renato,2026-02-01
+981c2994-de28-4e92-8bfc-01c60ae8158e,2026-01-31,2026-02-01 00:00:00,Mp *Loteriasonliners9,18.0,Lazer/Restaurantes,,Renato,2026-02-01
+0c574243-4ce5-4eba-b7df-5449cd08174c,2026-01-31,2026-02-01 00:00:00,Pegpagexpressltda,4.57,Outros,,Renato,2026-02-01
+36ac7ebb-6b62-401e-b24b-9c09d1c0e093,2026-02-01,2026-02-01 00:00:00,Jim.Com* Jane Silva D - Parcela 1/5,1008.0,Outros,Parcela 1/5,Renato,2026-02-01
+9b9bd433-bac6-4b10-8d9a-4c7d352d6302,2026-02-01,2026-02-01 00:00:00,Restaurante Alma Braga,119.4,Lazer/Restaurantes,,Renato,2026-02-01
+70555e88-b10a-419b-ba0a-4bacbf88a36e,2026-02-02,2026-02-01 00:00:00,Jornalcma,30.0,Outros,,Renato,2026-02-01
+1b1b6d02-7f74-4540-9bac-300f6b0c6738,2026-02-02,2026-02-01 00:00:00,Mp *Loteriasonlinewdp,18.0,Lazer/Restaurantes,,Renato,2026-02-01
+ea78ebbc-5dfd-41e7-8429-0a961dde8794,2026-02-03,2026-02-01 00:00:00,Aliexpress,169.92,Pessoal/Vestuário,,Renato,2026-02-01
+7694560c-e0c5-4185-ba61-9c1fef24e764,2026-02-04,2026-02-01 00:00:00,Assai Atacadista Lj144,277.97,Alimentação (Mercado/Sacolão),,Renato,2026-02-01
+2ec6af1a-fd92-4268-9830-d75ac39e8cdd,2026-02-04,2026-02-01 00:00:00,Fm Formosa Gas Unipess,107.0,Moradia,,Renato,2026-02-01
+f93949d9-e51d-495f-a563-acbc6f4e20f0,2026-02-04,2026-02-01 00:00:00,Hirota Food Express It,4.58,Alimentação (Mercado/Sacolão),,Renato,2026-02-01
+0ad7d654-5260-446b-8f7a-1f4ba6b8ed2c,2026-02-04,2026-02-01 00:00:00,Hirota Food Express It,19.96,Alimentação (Mercado/Sacolão),,Renato,2026-02-01
+48fb243f-cd89-42ba-b724-41192ec6a260,2026-02-04,2026-02-01 00:00:00,Nowpark,35.0,Outros,,Renato,2026-02-01
+2b90571e-dc6d-4d6e-bb17-cd65c9c9fec0,2026-02-04,2026-02-01 00:00:00,Soneda Perfumaria,27.0,Pessoal/Vestuário,,Renato,2026-02-01
+f686bcbd-209f-4a6a-b241-033786b4f5c0,2026-02-05,2026-02-01 00:00:00,Ametistapark,35.0,Outros,,Renato,2026-02-01
+354827e5-eebf-49a0-8ded-2f3ce78aafc6,2026-02-05,2026-02-01 00:00:00,Autopostosalim,150.0,Transporte (Combustível/Manutenção),,Renato,2026-02-01
+972867a0-a40c-429e-a2e5-5198ce85b9c9,2026-02-05,2026-02-01 00:00:00,Burger King,25.9,Lazer/Restaurantes,,Renato,2026-02-01
+34afa898-b351-4101-8f7f-bad50a19a094,2026-02-05,2026-02-01 00:00:00,Mp *Loteriasonlinexvy,18.0,Lazer/Restaurantes,,Renato,2026-02-01
+343f5b24-d980-4225-9138-676bf6d8afc3,2026-02-05,2026-02-01 00:00:00,Pegpagexpressltda,15.89,Outros,,Renato,2026-02-01
+f28f54fc-dc9d-4287-9e93-17d8e4a2fe8d,2026-02-07,2026-02-01 00:00:00,Alquimia,136.5,Outros,,Renato,2026-02-01
+3bed64d6-bc08-40c0-b426-6177dddac7f9,2026-02-07,2026-02-01 00:00:00,Estorno de compra,-227.38,Pagamento/Crédito,,Renato,2026-02-01
+195cf603-70c5-4d28-8a87-4da8d366a5c3,2026-02-07,2026-02-01 00:00:00,Mp *Loteriasonlinefl1,24.0,Lazer/Restaurantes,,Renato,2026-02-01
+f450f7b8-c063-4002-927e-0ce178da51e3,2026-02-07,2026-02-01 00:00:00,Restaurante,178.0,Lazer/Restaurantes,,Renato,2026-02-01
+bbe285e8-3339-471f-9dd3-c56447f1eef0,2026-02-08,2026-02-01 00:00:00,Pg *Arvensis Cosmetico - Parcela 1/6,53.63,Pessoal/Vestuário,Parcela 1/6,Renato,2026-02-01
+81e993ee-83f2-4f1e-9628-9e1a6fbbde2c,2026-02-08,2026-02-01 00:00:00,Shopee *Rcacomercial,79.9,Pessoal/Vestuário,,Renato,2026-02-01
+55b94d24-4837-43ee-9661-6c44c4c41865,2025-12-21,2026-01-01 00:00:00,Amazon - Parcela 2/5,55.98,Pessoal/Vestuário,Parcela 2/5,Renato,2026-01-01
+64deee68-6165-4296-85f3-815a43cdbe49,2025-12-21,2026-01-01 00:00:00,Amazon - Parcela 8/10,31.9,Pessoal/Vestuário,Parcela 8/10,Renato,2026-01-01
+be94c3d6-a217-4fef-87ad-aaa417ecc0d6,2025-12-21,2026-01-01 00:00:00,Brau S Magazine - Parcela 2/9,53.83,Pessoal/Vestuário,Parcela 2/9,Renato,2026-01-01
+904924f8-3b4c-4a26-a925-00baf0dce458,2025-12-21,2026-01-01 00:00:00,Brazza Gastrobar,111.3,Moradia,,Renato,2026-01-01
+08a2302a-8998-4d58-a766-9e3b3df12ea2,2025-12-21,2026-01-01 00:00:00,Bruno Turtienski Rossini 41088413870 - 8/10,95.07,Outros,,Renato,2026-01-01
+6bcb1823-918b-46d8-ac9d-f81793f347e1,2025-12-21,2026-01-01 00:00:00,Cobasi Extra Mrg Tiete - Parcela 2/3,130.63,Alimentação (Mercado/Sacolão),Parcela 2/3,Renato,2026-01-01
+b03c8552-906c-460f-adf9-ba30e7239667,2025-12-21,2026-01-01 00:00:00,Confeccoes Lennister - Parcela 3/3,98.96,Pessoal/Vestuário,Parcela 3/3,Renato,2026-01-01
+bda86b66-4dc7-4c63-a41d-0c23eba2aa6c,2025-12-21,2026-01-01 00:00:00,Curso*de*Extensao - Parcela 7/12,848.88,Educação/Cursos,Parcela 7/12,Renato,2026-01-01
+6dbd5e21-b470-412d-be8d-57b5cfac464c,2025-12-21,2026-01-01 00:00:00,Drogaria Sao Paulo - Parcela 2/3,61.84,Saúde/Farmácia,Parcela 2/3,Renato,2026-01-01
+7e2084c8-58e3-4d7e-a204-5c89685af36b,2025-12-21,2026-01-01 00:00:00,Drogasil3673 - Parcela 3/3,67.14,Moradia,Parcela 3/3,Renato,2026-01-01
+3300a76b-cae6-4059-b832-d242eb72b361,2025-12-21,2026-01-01 00:00:00,Hospital Veterinario F - Parcela 3/8,113.75,Saúde/Farmácia,Parcela 3/8,Renato,2026-01-01
+c2513153-2c16-4eae-8a8c-86d7d5435880,2025-12-21,2026-01-01 00:00:00,Ilha Rasa Paraty,260.7,Outros,,Renato,2026-01-01
+1f44594e-434a-4be9-b185-f6dbfa995796,2025-12-21,2026-01-01 00:00:00,Lj do Mec - Parcela 4/5,62.22,Outros,Parcela 4/5,Renato,2026-01-01
+cbec6371-b309-44b2-89ff-99d2c1ad7540,2025-12-21,2026-01-01 00:00:00,Lucianodasilva - Parcela 8/8,145.41,Outros,Parcela 8/8,Renato,2026-01-01
+2c83f30e-0317-4d38-9d08-897bf6ce7b82,2025-12-21,2026-01-01 00:00:00,Magazine Torra Torra - Parcela 2/2,42.42,Pessoal/Vestuário,Parcela 2/2,Renato,2026-01-01
+71472bf5-a6c7-42ae-8aee-24a33011e839,2025-12-21,2026-01-01 00:00:00,Mercadolivre*Ebazarco - Parcela 8/12,58.25,Alimentação (Mercado/Sacolão),Parcela 8/12,Renato,2026-01-01
+6cd9c03a-4e7d-4a1e-8008-39494537f57c,2025-12-21,2026-01-01 00:00:00,Mercadolivre*Megamamu - Parcela 8/12,291.65,Alimentação (Mercado/Sacolão),Parcela 8/12,Renato,2026-01-01
+e1dd03c3-c5f1-4bfa-856a-65ec019fba48,2025-12-21,2026-01-01 00:00:00,Mp *Memoe - Parcela 2/3,65.66,Outros,Parcela 2/3,Renato,2026-01-01
+0110c690-8cc1-4896-86f5-aa86eea58ee6,2025-12-21,2026-01-01 00:00:00,Perfumaria Mary - Parcela 2/2,55.0,Pessoal/Vestuário,Parcela 2/2,Renato,2026-01-01
+2cfd2eca-f520-4e5b-a00b-817c47cdcc90,2025-12-21,2026-01-01 00:00:00,Pg *Giga Distribuidora - Parcela 2/10,35.56,Outros,Parcela 2/10,Renato,2026-01-01
+720898db-1f4a-4188-8422-bf97e59d7f77,2025-12-21,2026-01-01 00:00:00,Promofarma - Parcela 4/6,83.22,Saúde/Farmácia,Parcela 4/6,Renato,2026-01-01
+f3585dd6-65b3-4ef0-90ee-7acc3db68efe,2025-12-21,2026-01-01 00:00:00,Smart Economy - Parcela 2/3,66.66,Outros,Parcela 2/3,Renato,2026-01-01
+7603b69c-cf0c-4990-ba06-1f23a8e6ff0e,2025-12-21,2026-01-01 00:00:00,Super Doce - Parcela 2/2,127.66,Outros,Parcela 2/2,Renato,2026-01-01
+b71eb2e3-d260-4767-8b59-1c6594ab6840,2025-12-21,2026-01-01 00:00:00,Super Doce - Parcela 2/2,139.92,Outros,Parcela 2/2,Renato,2026-01-01
+84df49da-1068-42f0-9bef-fdd5679b131b,2025-12-21,2026-01-01 00:00:00,Super Pro Atacado - Parcela 5/5,106.44,Outros,Parcela 5/5,Renato,2026-01-01
+ce97a1ed-f74f-4a90-aa79-595852b9f602,2025-12-21,2026-01-01 00:00:00,W R Car - Parcela 11/12,405.69,Transporte (Combustível/Manutenção),Parcela 11/12,Renato,2026-01-01
+e4fe20aa-62f0-448a-9f5a-8a3c449f7500,2025-12-21,2026-01-01 00:00:00,Yume Perfumaria - Parcela 3/3,42.18,Pessoal/Vestuário,Parcela 3/3,Renato,2026-01-01
+420cf74d-5ddc-4b74-afae-793052a86a21,2025-12-21,2026-01-01 00:00:00,Yume Perfumaria - Parcela 4/4,59.45,Pessoal/Vestuário,Parcela 4/4,Renato,2026-01-01
+19e39fd7-3880-4f74-a079-321462c35285,2025-12-22,2026-01-01 00:00:00,Abastec*Abastece Ai,90.0,Transporte (Combustível/Manutenção),,Renato,2026-01-01
+5b44a261-abe5-4cd0-8a1a-22a9338a5498,2025-12-22,2026-01-01 00:00:00,Arte Mandala de Parat,87.0,Outros,,Renato,2026-01-01
+1f0faff8-8b37-4130-b848-af27937ebe53,2025-12-22,2026-01-01 00:00:00,Bichosdomato - Parcela 1/4,357.5,Pets,Parcela 1/4,Renato,2026-01-01
+813cc888-ff0b-4e98-93e0-95b25c59bf88,2025-12-23,2026-01-01 00:00:00,Ajuste a crédito,-3.63,Pagamento/Crédito,,Renato,2026-01-01
+abed3044-44cb-45f7-bcea-3eeb7276e604,2025-12-23,2026-01-01 00:00:00,Bifinity,103.82,Outros,,Renato,2026-01-01
+df4367ee-9f70-4fde-b417-2bb1d7edd378,2025-12-23,2026-01-01 00:00:00,Confeccoes Lennister - Parcela 1/4,147.5,Pessoal/Vestuário,Parcela 1/4,Renato,2026-01-01
+7313c919-9044-4687-a43a-aa08ed76b24d,2025-12-23,2026-01-01 00:00:00,Drogasil3673 - Parcela 1/3,57.83,Moradia,Parcela 1/3,Renato,2026-01-01
+f0857c38-397d-46f9-b11d-545f5d393ad4,2025-12-23,2026-01-01 00:00:00,Frango Assado Posto Jo,100.0,Transporte (Combustível/Manutenção),,Renato,2026-01-01
+50b2ead0-03ec-4e26-8df9-367047f49de1,2025-12-23,2026-01-01 00:00:00,"IOF de ""Bifinity""",3.63,Outros,,Renato,2026-01-01
+0ba70af8-e980-41a9-bbae-8bf3bfe13869,2025-12-23,2026-01-01 00:00:00,Restaurante Bixiga Rur,148.72,Lazer/Restaurantes,,Renato,2026-01-01
+0b1959c7-c15e-46af-8aab-ae8a6432c9a9,2025-12-23,2026-01-01 00:00:00,iFood - NuPay,315.99,Lazer/Restaurantes,,Renato,2026-01-01
+fcf09823-6ee2-43c8-9152-8c45658e3310,2025-12-24,2026-01-01 00:00:00,Assai Atacadista Lj53,371.7,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+fb55c30b-6a88-4d90-b314-3363a88b881f,2025-12-24,2026-01-01 00:00:00,Ezequielvieirada,50.0,Outros,,Renato,2026-01-01
+556653ed-4b9b-49c5-9cfb-c8b7ae7a1bd5,2025-12-24,2026-01-01 00:00:00,Fm Formosa Gas Unipess,105.0,Moradia,,Renato,2026-01-01
+85a4f601-b1d0-4559-8abf-0e0534113a5e,2025-12-24,2026-01-01 00:00:00,Mp *Blackzone,115.0,Outros,,Renato,2026-01-01
+fdde9f4d-aa4b-444a-a1e9-5e8ffcdfd0f8,2025-12-25,2026-01-01 00:00:00,Ajuste a crédito,-3.59,Pagamento/Crédito,,Renato,2026-01-01
+6d01395e-9298-4884-ab20-88c61a5e57bc,2025-12-25,2026-01-01 00:00:00,Bifinity,102.83,Outros,,Renato,2026-01-01
+a1a46e74-6736-438b-b843-1ee824299961,2025-12-25,2026-01-01 00:00:00,"IOF de ""Bifinity""",3.59,Outros,,Renato,2026-01-01
+9879c143-6e0b-4dfe-a253-a22cd1e3dcdc,2025-12-25,2026-01-01 00:00:00,Mp *Loteriasonlinep84,132.0,Lazer/Restaurantes,,Renato,2026-01-01
+38cde534-e2fa-4d20-a915-14a12af56912,2025-12-25,2026-01-01 00:00:00,Super Doce,198.74,Outros,,Renato,2026-01-01
+db986418-4374-4cd5-bcd3-192a98c666d0,2025-12-25,2026-01-01 00:00:00,Tri Auto Posto,150.0,Transporte (Combustível/Manutenção),,Renato,2026-01-01
+a21c789c-b9ba-4e57-bb6d-b83dd761dda0,2025-12-26,2026-01-01 00:00:00,Ec *Melimais,9.9,Outros,,Renato,2026-01-01
+c7b5988d-a9fb-444e-a566-db079f3252a5,2025-12-27,2026-01-01 00:00:00,Ajuste a crédito,-3.62,Pagamento/Crédito,,Renato,2026-01-01
+462a2163-6ed0-42e7-b463-42caef8c9f13,2025-12-27,2026-01-01 00:00:00,Bifinity,103.69,Outros,,Renato,2026-01-01
+1e1f6ad6-b238-48e3-a318-54d5a0c487c4,2025-12-27,2026-01-01 00:00:00,Boteco da Serra Rest P,133.0,Outros,,Renato,2026-01-01
+21e50167-c908-48bc-927b-ec85e20a6615,2025-12-27,2026-01-01 00:00:00,"IOF de ""Bifinity""",3.62,Outros,,Renato,2026-01-01
+bddb71fb-a16d-4a35-9c35-6b0dfc95d54b,2025-12-28,2026-01-01 00:00:00,Abastec*Abastece Ai,180.0,Transporte (Combustível/Manutenção),,Renato,2026-01-01
+2ecf5f87-4dd9-453d-9937-c60eb0b89e8f,2025-12-28,2026-01-01 00:00:00,Gelafrutti,36.0,Outros,,Renato,2026-01-01
+21a4d369-86ec-4812-a837-23a8fda7bdd9,2025-12-28,2026-01-01 00:00:00,Luan Albuquerque Farias,20.84,Outros,,Renato,2026-01-01
+21c19f5f-6b20-4ef5-8d61-3dca52577ca2,2025-12-29,2026-01-01 00:00:00,EBW*Spotify - NuPay,12.9,Assinaturas/Serviços,,Renato,2026-01-01
+b9f45245-0363-49bc-9bdc-c91ac1c684c8,2025-12-29,2026-01-01 00:00:00,Pagamento recebido,-14179.33,Pagamento/Crédito,,Renato,2026-01-01
+d819f53b-dc76-4d70-9210-ff7eab214a35,2025-12-29,2026-01-01 00:00:00,Shopee *Adespelcia1112,19.9,Pessoal/Vestuário,,Renato,2026-01-01
+999df782-ada6-464e-951c-da13781ae4d6,2025-12-29,2026-01-01 00:00:00,Shopee *Larafiosebarba,17.19,Pessoal/Vestuário,,Renato,2026-01-01
+9b239a94-53b6-4977-ba38-cf39cd9c99bb,2025-12-30,2026-01-01 00:00:00,54168464andreia,40.0,Outros,,Renato,2026-01-01
+53a1e89f-4ced-4aeb-983d-5e78a2a4f0fe,2025-12-30,2026-01-01 00:00:00,Jim.Com* Unica Sempre,150.0,Outros,,Renato,2026-01-01
+8000f21b-243d-4c95-904b-20f39dafbc8f,2025-12-30,2026-01-01 00:00:00,Shopee *Bruinistore,71.0,Pessoal/Vestuário,,Renato,2026-01-01
+c0330a1a-93cf-4186-ae42-f8eec8aca962,2025-12-31,2026-01-01 00:00:00,Chama Supermercado,103.96,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+7fe3ea71-6ea8-4418-b549-5eaeb5f4a6f5,2025-12-31,2026-01-01 00:00:00,Chama Supermercado,215.39,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+885436c2-4e22-460c-a6ba-5ce5fa81fe8c,2025-12-31,2026-01-01 00:00:00,Fever* The Jury Experi,300.0,Outros,,Renato,2026-01-01
+39b9dc80-eeed-4c14-bff6-9a221e7a02a0,2025-12-31,2026-01-01 00:00:00,Mp *Loteriasonlinejxt,294.0,Lazer/Restaurantes,,Renato,2026-01-01
+9098aadc-d130-4da5-bdc6-12b8cb41f50d,2025-12-31,2026-01-01 00:00:00,Mp *Loteriasonlineku7,42.0,Lazer/Restaurantes,,Renato,2026-01-01
+3b74b11d-5c75-4d3f-814d-1b7654fe8b01,2025-12-31,2026-01-01 00:00:00,Mp *Loteriasonlinemxv,84.0,Lazer/Restaurantes,,Renato,2026-01-01
+a297013f-3deb-4b84-a9f7-9a68333660a5,2026-01-01,2026-01-01 00:00:00,Mp *Loteriasonlinesmo,332.41,Lazer/Restaurantes,,Renato,2026-01-01
+ef3d17e8-5b49-41ad-bac6-97dd67591acd,2026-01-02,2026-01-01 00:00:00,Aliexpress,93.32,Pessoal/Vestuário,,Renato,2026-01-01
+c414244f-30f8-4c36-a182-a0cbf82d1fe1,2026-01-02,2026-01-01 00:00:00,PUSHINPAY,61.76,Outros,,Renato,2026-01-01
+08050488-1938-4133-bbbf-906758ee080e,2026-01-03,2026-01-01 00:00:00,Ajuste a crédito,-3.58,Pagamento/Crédito,,Renato,2026-01-01
+9e140310-2830-48cf-9c21-37059326ee55,2026-01-03,2026-01-01 00:00:00,Ajuste a crédito,-3.58,Pagamento/Crédito,,Renato,2026-01-01
+b7db050b-f47a-4bb7-b1d2-5993eedcc807,2026-01-03,2026-01-01 00:00:00,Ajuste a crédito,-3.58,Pagamento/Crédito,,Renato,2026-01-01
+7c812c89-8e8f-4d3e-a8da-7fe9f3d6c42d,2026-01-03,2026-01-01 00:00:00,Alquimia Farmacia de M - Parcela 1/3,48.84,Saúde/Farmácia,Parcela 1/3,Renato,2026-01-01
+77489b41-fd48-4cb1-b35d-9abc51bb3671,2026-01-03,2026-01-01 00:00:00,"IOF de ""Paymonade""",3.58,Outros,,Renato,2026-01-01
+fbbbcfd2-2014-4c22-9b18-7371ec2f4942,2026-01-03,2026-01-01 00:00:00,"IOF de ""Paymonade""",3.58,Outros,,Renato,2026-01-01
+02399294-0409-4a3e-aa90-ac0bd05334f1,2026-01-03,2026-01-01 00:00:00,"IOF de ""Paymonade""",3.58,Outros,,Renato,2026-01-01
+0c35d21c-1990-48bb-a6f7-887eebff49be,2026-01-03,2026-01-01 00:00:00,Paymonade,102.53,Outros,,Renato,2026-01-01
+3519fd18-797d-49bb-97ba-1cb251ad5e13,2026-01-03,2026-01-01 00:00:00,Paymonade,102.53,Outros,,Renato,2026-01-01
+5bd1bd3c-28bd-4051-9063-7399431c2689,2026-01-03,2026-01-01 00:00:00,Paymonade,102.53,Outros,,Renato,2026-01-01
+c4cd15c4-c536-4c24-bea6-6f37d191b2bd,2026-01-03,2026-01-01 00:00:00,Yume Perfumaria - Parcela 1/2,32.63,Pessoal/Vestuário,Parcela 1/2,Renato,2026-01-01
+71d2e60d-249a-4a71-88fc-e169bc57f97d,2026-01-04,2026-01-01 00:00:00,Janiopolis Auto Posto,200.0,Transporte (Combustível/Manutenção),,Renato,2026-01-01
+ad8a5e6c-8e73-4b66-8f2e-25959fc1dfde,2026-01-04,2026-01-01 00:00:00,Mr Ice Sorvetes,112.0,Lazer/Restaurantes,,Renato,2026-01-01
+cf5c9eaa-f8d6-4dbd-8c77-2073007c506e,2026-01-04,2026-01-01 00:00:00,Panif Anjo da Guarda,25.0,Outros,,Renato,2026-01-01
+00024668-0e52-48f5-b373-3375168730fa,2026-01-05,2026-01-01 00:00:00,Mp *Restaurantelmsalto,4.0,Lazer/Restaurantes,,Renato,2026-01-01
+c8bd41bd-132f-46c2-930a-20f96d573533,2026-01-05,2026-01-01 00:00:00,Mp *Restaurantelmsalto,7.0,Lazer/Restaurantes,,Renato,2026-01-01
+f78d478d-0685-4ed8-96db-353aa0df80ed,2026-01-06,2026-01-01 00:00:00,FUNDACAO CARLOS CHAGAS,174.57,Moradia,,Renato,2026-01-01
+c15dbef1-caf7-4be4-91ae-d1ec2b799517,2026-01-06,2026-01-01 00:00:00,Net Pgt*Fatura Claro,332.48,Moradia,,Renato,2026-01-01
+d384082e-8131-4c54-809b-67a45f9fe34a,2026-01-06,2026-01-01 00:00:00,Tavela e Valle,180.0,Outros,,Renato,2026-01-01
+0fdddd57-f8f8-416a-a95e-5f2a26396800,2026-01-06,2026-01-01 00:00:00,Times Office Santana - Parcela 1/4,434.0,Moradia,Parcela 1/4,Renato,2026-01-01
+0e160deb-bda3-41ab-8c38-324391924a1d,2026-01-08,2026-01-01 00:00:00,Carolina Araújo Pereira,86.08,Outros,,Renato,2026-01-01
+904c2092-9432-4cda-8f79-f645e5043547,2026-01-08,2026-01-01 00:00:00,Rossi - Parcela 1/2,153.88,Outros,Parcela 1/2,Renato,2026-01-01
+cd39e990-a9cc-44a6-b458-43e213bafc30,2026-01-09,2026-01-01 00:00:00,Shopee *Jajapresentes,36.5,Pessoal/Vestuário,,Renato,2026-01-01
+e0c6a2e4-2f26-4994-9dea-31dfc6b70941,2026-01-10,2026-01-01 00:00:00,Chama Supermercado,76.65,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+e69ca5ed-2c01-4d30-80e2-789498a77ca2,2026-01-10,2026-01-01 00:00:00,Mercado de Carnes e Ro,92.65,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+428f522d-2b6c-4819-a30f-533a5d15deb1,2026-01-10,2026-01-01 00:00:00,Paypal *Sociedade Bra,50.0,Outros,,Renato,2026-01-01
+bb9984f2-f212-4e8b-b001-d20cadf1171f,2026-01-10,2026-01-01 00:00:00,Shopee *Gswitchgames - Parcela 1/12,236.24,Pessoal/Vestuário,Parcela 1/12,Renato,2026-01-01
+bfb802a9-3b7e-4c2c-aeb4-1fc6aa31bd01,2026-01-10,2026-01-01 00:00:00,iFood - NuPay,146.36,Lazer/Restaurantes,,Renato,2026-01-01
+0f819df3-8197-49df-838c-57af2fcd6a3a,2026-01-11,2026-01-01 00:00:00,Ifd*Bemdito Burger -,120.0,Lazer/Restaurantes,,Renato,2026-01-01
+267da268-e67e-45f6-8d2a-32a9a5260ab3,2026-01-11,2026-01-01 00:00:00,Jim.Com* Clinica Brag - Parcela 1/3,86.68,Saúde/Farmácia,Parcela 1/3,Renato,2026-01-01
+b7410930-918f-4cc8-bf7a-02250298a2df,2026-01-11,2026-01-01 00:00:00,Padaria Boa,39.68,Lazer/Restaurantes,,Renato,2026-01-01
+c4d2933b-ba74-4283-9726-c7f9165af197,2026-01-11,2026-01-01 00:00:00,Super Doce - Parcela 1/2,124.55,Outros,Parcela 1/2,Renato,2026-01-01
+d44d96ae-04c0-45af-b018-6b6aed75587f,2026-01-12,2026-01-01 00:00:00,Auto Posto Capivarao,150.0,Transporte (Combustível/Manutenção),,Renato,2026-01-01
+10e550e7-f66e-42ad-96eb-d05791f9b6e8,2026-01-12,2026-01-01 00:00:00,ENEL DISTRIBUICAO SAO PAULO,288.27,Moradia,,Renato,2026-01-01
+9bde3060-28f2-4839-a1cb-d41bc560b8ad,2026-01-12,2026-01-01 00:00:00,Jaime da Silva,106.0,Outros,,Renato,2026-01-01
+d7bc77ad-5611-4cf5-bbde-3c059ba02a96,2026-01-12,2026-01-01 00:00:00,Shopee *Shpstecnologia,127.71,Pessoal/Vestuário,,Renato,2026-01-01
+8a19172c-a1ff-4ca3-b3f3-17bf01c1d235,2026-01-12,2026-01-01 00:00:00,The Best Acai,5.0,Outros,,Renato,2026-01-01
+5046c65b-d181-417f-9b1b-5e02cc5663d1,2026-01-12,2026-01-01 00:00:00,The Best Acai,14.8,Outros,,Renato,2026-01-01
+f0a76995-a3c8-44d0-b55c-d5fb5601283c,2026-01-12,2026-01-01 00:00:00,The Best Acai,18.56,Outros,,Renato,2026-01-01
+858850af-aa77-4800-aecf-5599d60b01b5,2026-01-13,2026-01-01 00:00:00,Jim.Com* Gleiton Gabr - Parcela 1/3,130.0,Outros,Parcela 1/3,Renato,2026-01-01
+bdec77e4-e095-4d4e-9aa3-2bd9aea3343f,2026-01-13,2026-01-01 00:00:00,MARCO ANTONIO PEDROSO,10.33,Outros,,Renato,2026-01-01
+7542a55f-e644-4763-9bbd-bc2eec7cb9cf,2026-01-13,2026-01-01 00:00:00,Mp *Aliexpress,189.4,Pessoal/Vestuário,,Renato,2026-01-01
+76211780-8e4e-4bed-984a-d24d810fbe19,2026-01-13,2026-01-01 00:00:00,Shopee *Caladosolinda - Parcela 1/3,61.67,Pessoal/Vestuário,Parcela 1/3,Renato,2026-01-01
+f58a0991-dd1c-432b-9d25-bf62a444bf4d,2026-01-14,2026-01-01 00:00:00,Aneto Food Service,50.61,Moradia,,Renato,2026-01-01
+4f562eb0-971d-4989-a4ff-68cbb91dc8db,2026-01-14,2026-01-01 00:00:00,Bravium,127.8,Pessoal/Vestuário,,Renato,2026-01-01
+492d19f3-f690-4f13-b015-1ebf0824432e,2026-01-14,2026-01-01 00:00:00,Chama Supermercado,60.18,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+72339d7c-0d3e-43c6-a6fa-4112d2c3de8e,2026-01-14,2026-01-01 00:00:00,Dl*Aliexpress,238.6,Pessoal/Vestuário,,Renato,2026-01-01
+b09e62c6-66d5-4f79-a1f2-923ce6270e63,2026-01-14,2026-01-01 00:00:00,"Estorno de ""Mp *Aliexpress""",-189.4,Pagamento/Crédito,,Renato,2026-01-01
+c9718385-4137-4b0e-afd7-75d301c42851,2026-01-14,2026-01-01 00:00:00,Ifd*Mimic Fornecimento,62.49,Lazer/Restaurantes,,Renato,2026-01-01
+cca064d0-a54f-4b9e-aaa7-b3636bc702ac,2026-01-14,2026-01-01 00:00:00,Mercado de Carnes e Ro,77.63,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+da0fe9ce-4373-40cd-b293-0c1ad8e47737,2026-01-14,2026-01-01 00:00:00,Shopee *Waybikeroupasd - Parcela 1/2,63.92,Pessoal/Vestuário,Parcela 1/2,Renato,2026-01-01
+e635925a-c83a-4b43-8feb-ac36a45bdc6b,2026-01-15,2026-01-01 00:00:00,A Ventana Itau Ceic,13.9,Outros,,Renato,2026-01-01
+8dadd7dc-99b5-4a67-86a2-93e6102c8f40,2026-01-15,2026-01-01 00:00:00,Assai Atacadista Lj53,263.43,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+0bdc1a25-84e9-413f-afe6-148efa41345e,2026-01-15,2026-01-01 00:00:00,Bar e Restaurante Juv,84.29,Lazer/Restaurantes,,Renato,2026-01-01
+2b3609d8-cd27-4057-aab1-eba11681853a,2026-01-15,2026-01-01 00:00:00,Chama Supermercado,194.25,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+2e8e476c-4f49-4b57-adb3-e62210e2d75c,2026-01-15,2026-01-01 00:00:00,Hirota Food Express It,8.48,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+84e82d31-6056-41ac-bb4c-1a337dd147f0,2026-01-15,2026-01-01 00:00:00,Mp *Loteriasonlinez96,6.0,Lazer/Restaurantes,,Renato,2026-01-01
+a2a5b170-f2b5-46e3-88db-874a7ad458ce,2026-01-15,2026-01-01 00:00:00,Pmbmetro*1t260114-M35q,5.4,Outros,,Renato,2026-01-01
+28a291bd-1bdc-4c1f-bfb8-bc5644f702cb,2026-01-15,2026-01-01 00:00:00,Teg Food Restaurante e,75.71,Lazer/Restaurantes,,Renato,2026-01-01
+7f5b58a3-f98b-44c1-96c7-c07855e42fee,2026-01-16,2026-01-01 00:00:00,Airbnb * Hmcbtskar5,830.61,Outros,,Renato,2026-01-01
+c2d4f447-6542-4d25-af9b-71beb623d41f,2026-01-16,2026-01-01 00:00:00,Airbnb * Hmtqj8hxsa - Parcela 1/6,138.46,Outros,Parcela 1/6,Renato,2026-01-01
+2793b180-62c7-4af3-8a1c-641082879c99,2026-01-16,2026-01-01 00:00:00,Chama Supermercado,163.32,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+7115a05d-b1c3-4dbe-b375-c10df9b87503,2026-01-16,2026-01-01 00:00:00,"Estorno de ""Airbnb * Hmcbtskar5""",-830.61,Pagamento/Crédito,,Renato,2026-01-01
+11355529-bc6a-42a9-a506-a412aca5219f,2026-01-16,2026-01-01 00:00:00,Mercado de Carnes e Ro,61.33,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+239a6ba5-c3fb-48ab-baa0-d18313cab91b,2026-01-16,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 1/12,26.99,Saúde/Farmácia,Parcela 1/12,Renato,2026-01-01
+6d647476-4ca2-45ef-82fd-ac262e0c26f0,2026-01-17,2026-01-01 00:00:00,Aneto Food Service,26.63,Moradia,,Renato,2026-01-01
+449d49d8-b422-4bd7-b8ce-5d88697c85d5,2026-01-17,2026-01-01 00:00:00,Aneto Food Service,41.0,Moradia,,Renato,2026-01-01
+40576987-bb25-40bc-b18a-eaf85c031fff,2026-01-17,2026-01-01 00:00:00,Hirota Food Express It,9.98,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+7bb21f13-d963-4686-a50c-74d851c42885,2026-01-17,2026-01-01 00:00:00,Hnk Br Bebidas Ltda.,339.95,Outros,,Renato,2026-01-01
+d020090f-c8e2-4c29-a783-b861680fd311,2026-01-17,2026-01-01 00:00:00,Net Pgt*Fatura Claro,329.5,Moradia,,Renato,2026-01-01
+b494fa60-39f4-4b83-acc4-334f4f06e9ae,2026-01-18,2026-01-01 00:00:00,Choperia e Restaurante,5.0,Lazer/Restaurantes,,Renato,2026-01-01
+e1b60cc5-7b4a-4c4d-b067-9e80f54c44ef,2026-01-18,2026-01-01 00:00:00,Choperia e Restaurante,79.2,Lazer/Restaurantes,,Renato,2026-01-01
+23aa966d-1162-42a9-98b0-20542b551fcf,2026-01-19,2026-01-01 00:00:00,Airbnb * Hmtqj8hxsa - Parcela 2/6,138.43,Outros,Parcela 2/6,Renato,2026-01-01
+c4881cd4-f791-4cf4-b48b-7731c18e18e4,2026-01-19,2026-01-01 00:00:00,Airbnb * Hmtqj8hxsa - Parcela 3/6,138.43,Outros,Parcela 3/6,Renato,2026-01-01
+1a02f0ef-7c09-48cd-80a1-c414526c9d9a,2026-01-19,2026-01-01 00:00:00,Airbnb * Hmtqj8hxsa - Parcela 4/6,138.43,Outros,Parcela 4/6,Renato,2026-01-01
+21a67c79-c36b-4d71-887d-e64838e401b5,2026-01-19,2026-01-01 00:00:00,Airbnb * Hmtqj8hxsa - Parcela 5/6,138.43,Outros,Parcela 5/6,Renato,2026-01-01
+5705b929-460a-41a9-9b34-a0ff37479f40,2026-01-19,2026-01-01 00:00:00,Airbnb * Hmtqj8hxsa - Parcela 6/6,138.43,Outros,Parcela 6/6,Renato,2026-01-01
+3c27c1d9-d3a3-4a90-923a-6ac373b67adf,2026-01-19,2026-01-01 00:00:00,Cobasi Extra Mrg Tiete - Parcela 3/3,130.63,Alimentação (Mercado/Sacolão),Parcela 3/3,Renato,2026-01-01
+d5fcc3aa-3f87-4ed6-8d4f-1136e45564b0,2026-01-19,2026-01-01 00:00:00,Confeccoes Lennister - Parcela 2/4,147.5,Pessoal/Vestuário,Parcela 2/4,Renato,2026-01-01
+3bb9ffc2-d50a-4cdc-b3f6-199e52bf893c,2026-01-19,2026-01-01 00:00:00,Confeccoes Lennister - Parcela 3/4,147.5,Pessoal/Vestuário,Parcela 3/4,Renato,2026-01-01
+edb05ea1-a9c1-4d94-807e-a364b45f233e,2026-01-19,2026-01-01 00:00:00,Confeccoes Lennister - Parcela 4/4,147.5,Pessoal/Vestuário,Parcela 4/4,Renato,2026-01-01
+93d3205b-20af-418d-8962-270e7e7955ce,2026-01-19,2026-01-01 00:00:00,Desconto Antecipação Airbnb * Hmtqj8hxsa,-17.14,Outros,,Renato,2026-01-01
+fdc6b621-d09a-48b1-b15f-ae73ac29cef7,2026-01-19,2026-01-01 00:00:00,Desconto Antecipação Cobasi Extra Mrg Tiete,-1.09,Alimentação (Mercado/Sacolão),,Renato,2026-01-01
+8a10bff0-337c-437a-9e01-338eee0534f5,2026-01-19,2026-01-01 00:00:00,Desconto Antecipação Confeccoes Lennister,-7.34,Pessoal/Vestuário,,Renato,2026-01-01
+378ec902-a1d4-4827-be22-a1f8651d1803,2026-01-19,2026-01-01 00:00:00,Desconto Antecipação Jim.Com* Clinica Brag,-2.16,Saúde/Farmácia,,Renato,2026-01-01
+763e0959-054b-48e9-9079-fa86b6c20095,2026-01-19,2026-01-01 00:00:00,Desconto Antecipação Mp *Memoe,-0.55,Outros,,Renato,2026-01-01
+6ab27722-c7fc-478f-8410-b98544858773,2026-01-19,2026-01-01 00:00:00,Desconto Antecipação Pg *Genera Genera,-14.46,Saúde/Farmácia,,Renato,2026-01-01
+6bf0abdd-c4ea-467b-92a8-7ad4337b2291,2026-01-19,2026-01-01 00:00:00,Desconto Antecipação Shopee *Waybikeroupasd,-0.53,Pessoal/Vestuário,,Renato,2026-01-01
+a942891b-f8e2-43f5-ba0c-68e279145275,2026-01-19,2026-01-01 00:00:00,Drogasil3673 - Parcela 1/3,43.48,Moradia,Parcela 1/3,Renato,2026-01-01
+c367b091-5184-4678-9b1f-150e4266a18f,2026-01-19,2026-01-01 00:00:00,Jim.Com* Clinica Brag - Parcela 2/3,86.66,Saúde/Farmácia,Parcela 2/3,Renato,2026-01-01
+d42afa30-258c-4194-8831-019326eeb728,2026-01-19,2026-01-01 00:00:00,Jim.Com* Clinica Brag - Parcela 3/3,86.66,Saúde/Farmácia,Parcela 3/3,Renato,2026-01-01
+e7c36921-ccf3-47c7-bcb6-2b646c0e18ac,2026-01-19,2026-01-01 00:00:00,Jose Josenildo de Oliv,30.0,Outros,,Renato,2026-01-01
+8089df4a-c69e-4893-b4a5-8e6dafe47b65,2026-01-19,2026-01-01 00:00:00,Mp *Memoe - Parcela 3/3,65.66,Outros,Parcela 3/3,Renato,2026-01-01
+0e4fb382-487b-4d1e-a654-d32a06a68415,2026-01-19,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 10/12,26.98,Saúde/Farmácia,Parcela 10/12,Renato,2026-01-01
+41e3c601-cbeb-440e-9f0a-86c8f470f1af,2026-01-19,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 11/12,26.98,Saúde/Farmácia,Parcela 11/12,Renato,2026-01-01
+08d0536b-5e06-4fac-92af-c8d7ccbfbc3e,2026-01-19,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 12/12,26.98,Saúde/Farmácia,Parcela 12/12,Renato,2026-01-01
+8aaae3a1-29d2-4136-a4dd-2636901b6e57,2026-01-19,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 2/12,26.98,Saúde/Farmácia,Parcela 2/12,Renato,2026-01-01
+e82e099d-ecc9-4a22-81e3-d5decee6dbd7,2026-01-19,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 3/12,26.98,Saúde/Farmácia,Parcela 3/12,Renato,2026-01-01
+40c82994-358d-4903-90b7-6ee3d9f8be9d,2026-01-19,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 4/12,26.98,Saúde/Farmácia,Parcela 4/12,Renato,2026-01-01
+7eb3d7cd-6813-453f-aaa1-13015ea88295,2026-01-19,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 5/12,26.98,Saúde/Farmácia,Parcela 5/12,Renato,2026-01-01
+e881488c-93c7-4aa4-8855-d32893fb8bdb,2026-01-19,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 6/12,26.98,Saúde/Farmácia,Parcela 6/12,Renato,2026-01-01
+69ce028f-6d68-451c-b9fc-8878c379eba0,2026-01-19,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 7/12,26.98,Saúde/Farmácia,Parcela 7/12,Renato,2026-01-01
+b0a21f82-9e5a-4842-bfa9-92aec075ae5b,2026-01-19,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 8/12,26.98,Saúde/Farmácia,Parcela 8/12,Renato,2026-01-01
+0ce6a59d-a043-41c5-8ccd-342d5f5b92e1,2026-01-19,2026-01-01 00:00:00,Pg *Genera Genera - Parcela 9/12,26.98,Saúde/Farmácia,Parcela 9/12,Renato,2026-01-01
+b464716d-0fd3-480e-a18c-49d4044ffaaf,2026-01-19,2026-01-01 00:00:00,Shopee *Waybikeroupasd - Parcela 2/2,63.92,Pessoal/Vestuário,Parcela 2/2,Renato,2026-01-01
+0642e40d-a080-4fe5-9de6-79a494c7b52c,2026-01-20,2026-01-01 00:00:00,Mp *Loteriasonlinexf6,6.0,Lazer/Restaurantes,,Renato,2026-01-01
+cca1a608-b097-497a-90a4-0dc5ba84b97c,2026-01-20,2026-01-01 00:00:00,Pegpagexpressltda,5.49,Outros,,Renato,2026-01-01
+197d4808-4d54-480c-b1f4-fe37a1a4fb39,2025-01-22,2026-01-01,EVO*Gislene Godoy 12/18,278.0,Outros,,Pamela,
+75ac353d-17ff-4a37-9515-06ace4a7dcf1,2025-07-20,2026-01-01,PIX PEROLA CATARIN06/06,381.43,Outros,,Pamela,
+30628782-8411-4813-8b8e-7b84c40a087e,2025-08-05,2026-01-01,PORTO SEGURO CIA S06/10,374.06,Outros,,Pamela,
+c2bc93ba-d31f-4c34-81c4-888ccd50cd51,2025-08-08,2026-01-01,PORTO SEGURO CIA S06/10,221.91,Outros,,Pamela,
+a8b81a14-29ff-42c0-af84-6e6edd406362,2025-08-12,2026-01-01,MERCADOPAGO *MERCA06/10,1224.01,Alimentação (Mercado/Sacolão),,Pamela,
+eee05777-7193-4617-8045-c35dd73d220d,2025-08-17,2026-01-01,MERCADOPAGO *MERCA06/10,487.9,Alimentação (Mercado/Sacolão),,Pamela,
+b92c487d-0de8-4e36-a378-3a5aa99f3335,2025-09-19,2026-01-01,MERCADOLIVRE*LEVER05/12,277.14,Alimentação (Mercado/Sacolão),,Pamela,
+1fed5c1a-4b41-41b1-8c99-1fed9eb185b0,2025-11-04,2026-01-01,MERCADOLIVRE*ASUS 03/12,1432.49,Alimentação (Mercado/Sacolão),,Pamela,
+ad3f1e09-d760-4981-a5d0-02ac9b32a640,2025-11-19,2026-01-01,FUNERARIA CRISTO R03/05,1760.0,Outros,,Pamela,
+e1c4d960-8ad2-4194-8cc8-e58d4a407b46,2025-11-27,2026-01-01,SHOPEE *MASXGENAI,-264.79,Pessoal/Vestuário,,Pamela,
+5f9d3a15-4ae1-4098-9c90-fedb36d8c955,2025-11-29,2026-01-01,OCEANE,-0.2,Outros,,Pamela,
+721a6cd0-ba8a-4ca5-800a-08cc6b4aa9f9,2025-11-29,2026-01-01,OCEANE            02/06,37.71,Outros,,Pamela,
+14f5692c-e00c-490a-80ed-0e0ba3390bcf,2025-12-02,2026-01-01,DAFITI*4602381974,-0.04,Outros,,Pamela,
+c256f777-89e1-41a0-9107-114e530c5b9e,2025-12-02,2026-01-01,DAFITI*4602381974 02/05,96.32,Outros,,Pamela,
+a92bd89c-6237-4305-ba72-13a5e793b561,2025-12-06,2026-01-01,ISAAC NEWTON,-0.2,Outros,,Pamela,
+4997c3ea-da8a-4e17-9bef-33b1754a05ca,2025-12-06,2026-01-01,ISAAC NEWTON      02/06,231.7,Outros,,Pamela,
+817bcade-87a9-4573-84a2-cb0db349e2a3,2025-12-10,2026-01-01,AIRBNB * HMP5XBM3E02/06,381.3,Outros,,Pamela,
+a74351a4-31c6-4261-8499-46e51705ae01,2025-12-10,2026-01-01,AIRBNB * HMP5XBM3E4,-0.05,Outros,,Pamela,
+04ba9288-2f47-4596-adc1-1b181ee6a140,2025-12-15,2026-01-01,Leiturinha S.A    02/12,65.8,Outros,,Pamela,
+218a1c99-e4ac-490e-96ae-076b00f71e56,2025-12-17,2026-01-01,ZP *ALIG INVISALIG02/12,487.5,Outros,,Pamela,
+46a66a90-7faf-4f52-b6fd-395c805e8c71,2025-12-19,2026-01-01,MLP*Estante V Edu 02/03,38.6,Outros,,Pamela,
+09fa4768-746b-4edf-a0f2-643e1c1db89c,2025-12-21,2026-01-01,AZOS SEGUROS*Azos Segu,292.77,Outros,,Pamela,
+a9d6c1de-61e6-4ca7-8b34-ec5c0f0a9d2f,2025-12-21,2026-01-01,CONTA VIVO,150.0,Moradia,,Pamela,
+9dfdc4c8-1787-4341-9977-efeb5a2cff83,2025-12-21,2026-01-01,GELATERIA MIRACOLO,52.0,Outros,,Pamela,
+342fa47d-6335-495b-b631-f2311585ff7b,2025-12-21,2026-01-01,Google Audible Audio,19.9,Assinaturas/Serviços,,Pamela,
+8638179e-32ba-4bec-b74d-c1d003b52313,2025-12-22,2026-01-01,MERCADOLIVRE*MERCADOL,64.8,Alimentação (Mercado/Sacolão),,Pamela,
+c7561870-f17e-47e2-be26-ccac761d8770,2025-12-25,2026-01-01,TagItau*PAMELAGUERRA,50.0,Outros,,Pamela,
+1302fd6d-48cc-49af-b22c-f53b107f5a90,2025-12-26,2026-01-01,Google Play Books,39.0,Assinaturas/Serviços,,Pamela,
+2e369ca1-b707-44ac-a040-c60ee83a436a,2025-12-27,2026-01-01,GELAFRUTTI,21.0,Outros,,Pamela,
+7823aabd-5acc-49f6-a5d3-86f226c7117c,2025-12-27,2026-01-01,LONDON VALET ASAEL,10.0,Outros,,Pamela,
+6ce77618-1f67-4507-8420-10d629516d2a,2025-12-27,2026-01-01,THE BOX CAFE,94.5,Outros,,Pamela,
+913e3bfb-7367-4daf-aae8-8bc795e67727,2025-12-28,2026-01-01,CARREFOUR IT-CT A,3.69,Alimentação (Mercado/Sacolão),,Pamela,
+172cbe1d-6c71-4eb0-935c-a4edcf69a760,2025-12-28,2026-01-01,PETZ ATACADO PET,316.4,Pets,,Pamela,
+3cd1f486-a445-42de-b62b-451f2efbbbb8,2025-12-28,2026-01-01,SAMS RADIAL -CT,105.61,Outros,,Pamela,
+40354bd0-79d9-4844-93b1-6aac5d5646b9,2025-12-29,2026-01-01,MERCADOLIVRE*MERCADOL,157.98,Alimentação (Mercado/Sacolão),,Pamela,
+280b20f9-b66d-4df7-b4a2-5cf4cb630267,2025-12-29,2026-01-01,PAGAMENTO EFETUADO,-16529.96,Outros,,Pamela,
+8f4477fa-f421-4eed-be4b-787fb8d05a47,2025-12-30,2026-01-01,FITOFAR MANIPULACAO EI,373.0,Outros,,Pamela,
+d76280d5-6d62-4e4c-9cf9-34026085d32f,2025-12-30,2026-01-01,MERCADOLIVRE*2PRODUTO,157.57,Alimentação (Mercado/Sacolão),,Pamela,
+3684029a-78d9-45c7-8f62-d6cd613756ab,2025-12-30,2026-01-01,MP *ROBERTAHAIR,120.0,Outros,,Pamela,
+42281251-fcf1-47b4-aaf0-2946a9b9fc6d,2026-01-01,2026-01-01,RAIA2580    -CT,37.91,Outros,,Pamela,
+4f12c222-5f11-43a7-bde4-bc26bae36846,2026-01-02,2026-01-01,MP *ALIEXPRESS,178.67,Pessoal/Vestuário,,Pamela,
+4707344c-d185-4dde-aa30-2a6462b5b9b2,2026-01-02,2026-01-01,PG *PORTAL SUPORTE MEI,-178.0,Outros,,Pamela,
+b20647f9-26fe-4b49-a511-3034774f44fc,2026-01-02,2026-01-01,PG *PORTAL SUPORTE MEI,-0.44,Outros,,Pamela,
+096a1ae4-9aab-4996-852a-3e5f4f6f6d7a,2026-01-02,2026-01-01,PG *PORTAL SUPORTE MEI,-0.44,Outros,,Pamela,
+8ce258b5-fad1-4f4f-b175-370f50d7ea35,2026-01-02,2026-01-01,PG *PORTAL SUPORTE01/12,14.87,Outros,,Pamela,
+23dbd6eb-ad7d-4165-8e93-c6db7d87e5a7,2026-01-02,2026-01-01,PG *PORTAL SUPORTE01/12,14.87,Outros,,Pamela,
+fd75c66e-e38b-476f-9c24-4c83ec45b98d,2026-01-02,2026-01-01,PG *PORTAL SUPORTE02/12,14.87,Outros,,Pamela,
+b33215d4-f975-4536-9400-0e6bf013451b,2026-01-02,2026-01-01,PG *PORTAL SUPORTE03/12,14.87,Outros,,Pamela,
+2dc17f0d-68b8-455e-93a1-863106201e0e,2026-01-02,2026-01-01,PG *PORTAL SUPORTE04/12,14.87,Outros,,Pamela,
+b57120a4-8b61-4ad6-bd38-ef7130b4b75b,2026-01-02,2026-01-01,PG *PORTAL SUPORTE05/12,14.87,Outros,,Pamela,
+93d0587c-184b-4a06-915d-0c471b657ec2,2026-01-02,2026-01-01,PG *PORTAL SUPORTE06/12,14.87,Outros,,Pamela,
+8e0d81d7-0756-4b8d-b152-ec42b6f3663e,2026-01-02,2026-01-01,PG *PORTAL SUPORTE07/12,14.87,Outros,,Pamela,
+e171b253-e9e2-4946-9651-23e3c6ef1697,2026-01-02,2026-01-01,PG *PORTAL SUPORTE08/12,14.87,Outros,,Pamela,
+7a958631-a258-4a8f-8260-1fdf6b029f19,2026-01-02,2026-01-01,PG *PORTAL SUPORTE09/12,14.87,Outros,,Pamela,
+fb147878-6aba-4478-b57b-3b63225ca553,2026-01-02,2026-01-01,PG *PORTAL SUPORTE10/12,14.87,Outros,,Pamela,
+fba15e2c-c075-4ee3-92b6-2414714e97db,2026-01-02,2026-01-01,PG *PORTAL SUPORTE11/12,14.87,Outros,,Pamela,
+73ab66d7-f7d1-4725-92aa-d6a2e485aed8,2026-01-02,2026-01-01,PG *PORTAL SUPORTE12/12,14.87,Outros,,Pamela,
+6a82ee0f-9e39-4b59-9ea7-bc3e6ba0d55f,2026-01-02,2026-01-01,ZAE BRAGANCA,2.5,Outros,,Pamela,
+c8f68065-c813-43db-9757-145267520227,2026-01-03,2026-01-01,AlfaDescarta-CT,35.2,Outros,,Pamela,
+c1795456-4ca0-45fd-ba44-6bb6e7b3df51,2026-01-03,2026-01-01,DROGARIA SAO PAULO SA,20.58,Saúde/Farmácia,,Pamela,
+81842af9-2967-4f4e-8327-109a76c9912e,2026-01-03,2026-01-01,PADARIA COLM-CT,30.0,Lazer/Restaurantes,,Pamela,
+3cdb9778-927f-4571-814b-6a72bcc86c91,2026-01-04,2026-01-01,GREENN**CAMALEON A01/12,19.58,Outros,,Pamela,
+3e6ed4ff-46a4-4f4a-b626-12b56763cd62,2026-01-04,2026-01-01,MERCADAO SUPERMERCADO,44.79,Alimentação (Mercado/Sacolão),,Pamela,
+6245b17c-df78-4e1e-a277-795d74c9b87e,2026-01-04,2026-01-01,PG *PORTAL SUPORTE MEI,-178.44,Outros,,Pamela,
+ea739fb5-2c1f-4161-b87e-6c9e4873a377,2026-01-05,2026-01-01,TIMES OFFICE SANTA01/04,434.0,Moradia,,Pamela,
+05f40ed8-1a49-4e29-babb-cce9dadfc8bd,2026-01-06,2026-01-01,MERCADOLIVRE*MEDSMELL,136.3,Alimentação (Mercado/Sacolão),,Pamela,
+c663befe-7d65-4964-b5d2-cc3af12d136b,2026-01-06,2026-01-01,MERCADOLIVRE*MERCADOL,151.8,Alimentação (Mercado/Sacolão),,Pamela,
+75ce1963-96b1-48e9-b240-f406ab6b9e87,2026-01-06,2026-01-01,RDSAUDE ONLINE,161.87,Saúde/Farmácia,,Pamela,
+f8c56d67-f96a-4af4-9223-11d694cd7346,2026-01-09,2026-01-01,EC          *EC*CLARO,20.0,Moradia,,Pamela,
+123799a2-2383-417a-9d20-17e5ae871d3e,2026-01-09,2026-01-01,LIFE,94.9,Outros,,Pamela,
+fa753801-2b1e-4eef-b45f-5efe28282505,2026-01-09,2026-01-01,LIFE,94.9,Outros,,Pamela,
+5a2b93df-332e-4dcc-8bf3-ac7a995aeaff,2026-01-09,2026-01-01,MC DONALDS,37.9,Outros,,Pamela,
+580cb00a-a3fe-4606-8b9e-cf1e1adb88ce,2026-01-09,2026-01-01,PEX*Segundo Tabeliao d,10.36,Outros,,Pamela,
+d8648cd5-88b6-45a8-814d-54f437136550,2026-01-10,2026-01-01,BIG SUPERMERCADOS,90.74,Alimentação (Mercado/Sacolão),,Pamela,
+e0b4e6b0-dfaa-4184-9b37-ccaededb95a8,2026-01-10,2026-01-01,JIM.COM* CLINICA B01/05,110.8,Saúde/Farmácia,,Pamela,
+63b1f482-9ee2-480d-9fff-b309b102bbdf,2026-01-10,2026-01-01,ZP*TAIZA PIR-CT 1 01/03,82.68,Outros,,Pamela,
+cd4d5c6b-d96f-47ae-ac30-ba29599f346a,2026-01-11,2026-01-01,DA PRACA IMIGRANTES,41.36,Outros,,Pamela,
+77202f90-1532-4a15-8c31-0dcbb301b443,2026-01-11,2026-01-01,SUPERMERCARD-CT  VIDA,39.22,Outros,,Pamela,
+4f22a2a2-ce06-46c0-9e03-5a35a17af178,2026-01-12,2026-01-01,AMAZON BR,115.0,Pessoal/Vestuário,,Pamela,
+be53dbfd-ced9-4f6f-8a68-b162afc14dde,2026-01-12,2026-01-01,AMAZONMKTPLC*PAOLLADEM,20.05,Pessoal/Vestuário,,Pamela,
+1bcf8cab-4dd1-4216-9916-c5f490f9d203,2026-01-12,2026-01-01,Banca700,30.0,Outros,,Pamela,
+9114ba4c-77bd-43f8-8dec-5831c4d33f42,2026-01-12,2026-01-01,CHOPERIA E RESTAURANTE,91.3,Lazer/Restaurantes,,Pamela,
+4e3dafde-8b42-4ff3-8557-6159c506c3de,2026-01-12,2026-01-01,RESTAURANTES FOGO E F,57.6,Lazer/Restaurantes,,Pamela,
+52f248b7-599f-4fe7-bf78-a22f081067d3,2026-01-13,2026-01-01,DAVI MASSAYUKI SO,45.85,Outros,,Pamela,
+f3eb261b-047f-41bc-8817-ba65d92a7c4f,2026-01-13,2026-01-01,DIOGO ESTACIONAMENTO,25.0,Transporte (Combustível/Manutenção),,Pamela,
+aabf9f8a-6d2f-42c2-b85a-a2bc66bfa558,2026-01-13,2026-01-01,PegPagExpres-CT a,13.4,Outros,,Pamela,
+261adfd2-0f3c-4b9e-9b99-f82728e664df,2026-01-14,2026-01-01,IFD*ROLDAO AUTO SERVIC,1.64,Lazer/Restaurantes,,Pamela,
+bcf6d0e5-33e7-4bc8-9b82-b9a9992e1a25,2026-01-14,2026-01-01,IFD*ROLDAO AUTO SERVIC,219.81,Lazer/Restaurantes,,Pamela,
+1d61fd25-d6d4-4b84-bb55-8ff370c8352b,2026-01-14,2026-01-01,SHOPEE *SHPSTECNOLOGIA,21.5,Pessoal/Vestuário,,Pamela,
+a0e44148-e123-4965-98a9-bb4d3bdcb6b2,2026-01-15,2026-01-01,ClinicaCrisc-CT   01/12,250.0,Saúde/Farmácia,,Pamela,
+7edc1bf0-f95f-47f9-a557-d1c5081cca99,2026-01-15,2026-01-01,LEAL PARK ESTACIONAMEN,15.0,Outros,,Pamela,
+8bed24f7-3ba6-4e32-a3df-688b569f2bf0,2026-01-15,2026-01-01,SHOPEE *FULLPOWER,77.99,Pessoal/Vestuário,,Pamela,
+e8af9372-4714-4804-b66b-952d63250f95,2026-01-15,2026-01-01,SHOPEE *Shop1001Utilid,35.9,Pessoal/Vestuário,,Pamela,
+42e24266-4672-4cdb-8352-cc65ca5e6bfc,2026-01-15,2026-01-01,WWWEmba*EMB*Brasil01/03,715.64,Outros,,Pamela,
+70a93654-b008-4f64-ae2e-26bc145f4f57,2026-01-16,2026-01-01,IFD*62720494 VINICIUS,54.99,Lazer/Restaurantes,,Pamela,
+40365fae-eed7-44ae-bfc7-26ff6ed2085d,2026-01-17,2026-01-01,CASA ORIENTE,125.3,Outros,,Pamela,
+8d627512-6e2b-4204-86b3-ddd829fb00d2,2026-01-17,2026-01-01,RAIA1822,51.71,Outros,,Pamela,
+48569faf-1a2f-4a58-87ff-d01e3a24f3ec,2026-01-19,2026-01-01,ANETO FOOD SERVICE,4.65,Moradia,,Pamela,
+d6fc69d4-ef13-4834-a3a0-48f855514795,2026-01-19,2026-01-01,ART DELLA PASTA PARMEG,69.0,Outros,,Pamela,
+c5b49e4b-0e92-41bd-9833-c577b6e4afef,2026-01-20,2026-01-01,ANETO FOOD SERVICE,9.3,Moradia,,Pamela,
+3bd7f9fb-348c-40be-a4c0-cd4b36366479,2026-01-20,2026-01-01,BAR E LANCHES CACIQUE,44.99,Lazer/Restaurantes,,Pamela,
+2026-02-02,AMAZONMKTPLC*OLMECOMER,-47.0,Outros,Pamela,2026-02-02,9c9bfe5e-b18f-46b9-9ab6-5c3897b3a2b9
+2026-02-02,IOF COMPRA INTERNACIONA,5.21,Outros,Pamela,2026-02-02,daa50153-d3a1-4d14-b59d-9f4fc1942164
+2026-02-02,IOF COMPRA INTERNACIONA,4.65,Outros,Pamela,2026-02-02,be3003c4-f5fb-4659-afaf-7fc9537acf85
+2026-02-02,IOF COMPRA INTERNACIONA,0.94,Outros,Pamela,2026-02-02,5a3be6e5-a11b-4046-b14e-fc0579417c88
+2026-02-01,HBL*HBLIURIMILHAS,-248.04,Outros,Pamela,2026-02-01,c8d2a33f-118a-4e61-b50e-f82b08077bce
+2026-02-01,RATEPUNK US,149.52,Outros,Pamela,2026-02-01,8078514f-8985-4f70-a2d1-c6f9682c2ba5
+2026-02-01,RATEPUNK US,27.64,Outros,Pamela,2026-02-01,7947531f-d58b-400e-b916-0849ea819115
+2026-02-01,CLAROWHATSAPPPAY,34.9,Outros,Pamela,2026-02-01,701a6084-02d5-46e6-afce-6d797df1729e
+2026-02-01,CantinhoDaCintia,20.0,Outros,Pamela,2026-02-01,2143e99a-e022-4c3d-9a21-edabc1e500e0
+2026-02-01,RATEPUNK US,132.9,Outros,Pamela,2026-02-01,0621fb62-099f-41d4-b413-97ba702fe682
+2026-02-01,MP *PAMELABELLAGU,-10.54,Outros,Pamela,2026-02-01,84171701-8393-4b92-98cc-6cda2966547c
+2026-01-31,HBL*HBLIURIMILHAS 08/12,20.67,Outros,Pamela,2026-01-31,a5eb3e54-7d40-4b04-bd8c-016be7c152f2
+2026-01-31,HBL*HBLIURIMILHAS 03/12,20.67,Outros,Pamela,2026-01-31,55b81869-c000-4dd2-9269-206859828ec7
+2026-01-31,HBL*HBLIURIMILHAS 09/12,20.67,Outros,Pamela,2026-01-31,dddfa582-d84a-4132-91fd-e04ffb427933
+2026-01-31,HBL*HBLIURIMILHAS 04/12,20.67,Outros,Pamela,2026-01-31,a2bc15b3-ac66-435a-972e-a8a2b47103b6
+2026-01-31,HBL*HBLIURIMILHAS 12/12,20.67,Outros,Pamela,2026-01-31,358c8e14-488c-413e-a9c9-fb153c8ccfd1
+2026-01-31,HBL*HBLIURIMILHAS 07/12,20.67,Outros,Pamela,2026-01-31,0f15d59f-4fc4-4c42-9f31-d60762110952
+2026-01-31,HBL*HBLIURIMILHAS 02/12,20.67,Outros,Pamela,2026-01-31,01b228a6-8a9b-4a1e-8107-3f7fb181ecf9
+2026-01-31,HBL*HBLIURIMILHAS 11/12,20.67,Outros,Pamela,2026-01-31,24f0f685-412b-4263-b39d-4d2ed8cd2b3d
+2026-01-31,HBL*HBLIURIMILHAS 06/12,20.67,Outros,Pamela,2026-01-31,c73e0b76-bdaf-4f56-b87a-2aa4e33ca448
+2026-01-31,HBL*HBLIURIMILHAS 10/12,20.67,Outros,Pamela,2026-01-31,eba83bf7-4ce7-4c4f-ada1-380b6ed517b8
+2026-01-31,HBL*HBLIURIMILHAS 05/12,20.67,Outros,Pamela,2026-01-31,5b67e70b-d166-40ba-8d4c-3737d6926e4c
+2026-01-31,HUBLA  *IURIMILHAS,10.0,Outros,Pamela,2026-01-31,0a60467d-299f-448d-98cd-9e887f3ace6e
+2026-01-31,LONDON VALET ASAEL,10.0,Outros,Pamela,2026-01-31,a4851cba-d19e-45eb-b7d2-f1850ac13022
+2026-01-31,HBL*HBLIURIMILHAS 01/12,20.67,Outros,Pamela,2026-01-31,721200b9-dedf-4a8a-b81f-d924d87816b7
+2026-01-31,CLUBE*ESFERA      01/12,101.61,Outros,Pamela,2026-01-31,7c2d4d5c-fb80-4019-9746-2c5b2d00b22d
+2026-01-30,MP *PREFMUNBRAGANCAPA,136.97,Outros,Pamela,2026-01-30,3c550f99-1014-4e01-a773-a8a93955ed3f
+2026-01-29,PORTAL LESTE,200.0,Outros,Pamela,2026-01-29,7bbf379f-5a0b-41c6-911a-287eb0e2bea9
+2026-01-29,MP *PAMELABELLAGU,10.54,Outros,Pamela,2026-01-29,734b2406-8bb0-40ff-8574-5ba2a3c44858
+2026-01-29,SAULO SALATIEL DE AL,30.0,Outros,Pamela,2026-01-29,5dcf67e8-318c-48fe-9172-8098f8f38795
+2026-01-28,ANETO FOOD SERVICE,12.1,Outros,Pamela,2026-01-28,baddfc1b-4376-47df-a57d-21af39590baa
+2026-01-28,NUTRICAR BRASIL COMERC,17.39,Outros,Pamela,2026-01-28,b8f65c45-1e79-4611-990d-ea009e1ef07d
+2026-01-28,O PANELINHA RESTAURANT,54.9,Outros,Pamela,2026-01-28,e45c265a-b422-4879-9b80-6ec7d592957c
+2026-01-28,LIVELO S.A.*Clube 01/12,123.46,Outros,Pamela,2026-01-28,5d42f739-8228-4f77-b766-60c093531f4c
+2026-01-28,PmbMetro*1T2-CT 8-SO1L,5.4,Outros,Pamela,2026-01-28,073c8132-88fa-4a73-a7dc-685bc9744739
+2026-01-27,MERCADOLIVRE*2PROD01/04,33.74,Outros,Pamela,2026-01-27,7926c6b4-4094-4166-b98a-3f35b34d4e4f
+2026-01-27,MERCADOLIVRE*2PRODUTO,49.99,Outros,Pamela,2026-01-27,b7e4eba1-84db-4711-b2f7-4bfa144228b6
+2026-01-27,PAGAMENTO EFETUADO,-13346.48,Outros,Pamela,2026-01-27,aae61b4f-cb5c-4b35-9a61-8e8dc607d913
+2026-01-26,MP *SBWCOLOR,82.0,Outros,Pamela,2026-01-26,11655aed-98e6-4047-857a-eb7e9a618854
+2026-01-26,O PANELINHA RESTAURANT,54.9,Outros,Pamela,2026-01-26,96e07544-3224-489b-9ba0-8f99a4fe378f
+2026-01-26,AMAZONMKTPLC*OLMEC01/06,36.85,Outros,Pamela,2026-01-26,d8284dc7-8948-45d2-9631-92dc970d5014
+2026-01-25,SHOPEE *UPTOPHOME,68.4,Outros,Pamela,2026-01-25,29525c54-8220-4aa2-9ac9-3ee33b5ec77c
+2026-01-24,PG *VAKINHA.COM CONTRI,1005.99,Outros,Pamela,2026-01-24,ff73ff6f-dbb5-45d3-aa0a-56a6fbb6b1a6
+2026-01-24,HTM         *comboJB,47.0,Outros,Pamela,2026-01-24,0a7c14ba-7957-4982-81d6-e68af6ba9fe1
+2026-01-24,HTM*150looks15pecas,47.0,Outros,Pamela,2026-01-24,73ed070f-0afa-46d9-8b0e-7e94d72bacd4
+2026-01-24,ROLDAO MOOCA,261.4,Outros,Pamela,2026-01-24,40fa0325-d336-4ffe-aa78-4a457eeb3b18
+2026-01-23,IFD*Andrea Jean Saab,2.0,Outros,Pamela,2026-01-23,45c4f079-f448-4305-ac45-c96bd08b5567
+2026-01-23,IFD*62720494 VINICIUS,76.99,Outros,Pamela,2026-01-23,2e5617bd-4cb6-4be6-9a77-020931a49d1f
+2026-01-23,PG *EDITORA JADE LTDA,150.9,Outros,Pamela,2026-01-23,f08b3374-9928-416d-81a8-d7f69c417046
+2026-01-22,SHOPEE *SalaCoz   01/02,86.82,Outros,Pamela,2026-01-22,76b871ac-52cd-4c80-ad55-713e2d5bf0c2
+2026-01-22,CHOPERIA E RESTAURANTE,55.0,Outros,Pamela,2026-01-22,d31a1cca-e260-433b-93c2-82d006f928a7
+2026-01-21,AZOS SEGUROS*Azos Segu,292.77,Outros,Pamela,2026-01-21,4766cf26-5637-4fc7-826b-b682938a22c3
+2026-01-21,PegPagExpressLtda,15.89,Outros,Pamela,2026-01-21,09528756-75e5-4163-917a-4852ea007b03
+2026-01-21,PegPagExpressLtda,12.32,Outros,Pamela,2026-01-21,91d2c452-0d17-4147-a143-c041931b3130
+2026-01-20,Uber UBER *TRIP HELP.U,68.57,Outros,Pamela,2026-01-20,df68a599-24ce-4d0b-8bee-118bbb8020e2
+2026-01-15,ClinicaCrisc-CT   02/12,250.0,Outros,Pamela,2026-01-15,2ad75062-1b61-44e7-a47d-71404f56680c
+2026-01-15,WWWEmba*EMB*Brasil02/03,715.64,Outros,Pamela,2026-01-15,432e3bcb-32f4-408e-853c-54c205763ca1
+2026-01-10,ZP*TAIZA PIR-CT 1 02/03,82.68,Outros,Pamela,2026-01-10,f10051e2-55f1-4cdb-8c32-819b6943b0ef
+2026-01-10,JIM.COM* CLINICA B02/05,110.8,Outros,Pamela,2026-01-10,50ccdeee-0e61-48ae-b9e3-f223b054f1ce
+2026-01-05,TIMES OFFICE SANTA02/04,434.0,Outros,Pamela,2026-01-05,764d02c7-807a-446a-8224-75fa553a9a2f
+2026-01-04,GREENN**CAMALEON A02/12,19.58,Outros,Pamela,2026-01-04,2a820852-2928-42fd-8db1-a08154786fa4
+2026-01-02,PG *PORTAL SUPORTE02/12,14.87,Outros,Pamela,2026-01-02,45f019fa-1419-4b77-88cd-63f130d80a8d
+2025-12-19,MLP*Estante V Edu 03/03,38.6,Outros,Pamela,2025-12-19,9d1a3461-e751-40a8-b475-84ec56440945
+2025-12-17,ZP *ALIG INVISALIG03/12,487.5,Outros,Pamela,2025-12-17,6b06b8c4-38f4-4ff1-81d8-19a5c72b7021
+2025-12-15,Leiturinha S.A    03/12,65.8,Outros,Pamela,2025-12-15,825fdad3-456f-4b76-969b-d6631088bc59
+2025-12-10,AIRBNB * HMP5XBM3E03/06,381.3,Outros,Pamela,2025-12-10,78707d81-8ff4-4182-b3cd-fb2a29be43c6
+2025-12-06,ISAAC NEWTON      03/06,231.7,Outros,Pamela,2025-12-06,7c2a4ae2-8b38-493c-9317-03682e06dd22
+2025-12-02,DAFITI*4602381974 03/05,96.32,Outros,Pamela,2025-12-02,8abfe067-6ecc-4ed1-b4b5-78ae89577048
+2025-11-29,OCEANE            03/06,37.71,Outros,Pamela,2025-11-29,6ee67d9f-42d6-4f44-92b1-3b20247ab4b2
+2025-11-19,FUNERARIA CRISTO R04/05,1760.0,Outros,Pamela,2025-11-19,175a7800-de1e-4cf7-ba37-7c6e3f00ba6d
+2025-11-04,MERCADOLIVRE*ASUS 04/12,1432.49,Outros,Pamela,2025-11-04,c6fda181-a0cc-47d6-81e7-4976537fc393
+2025-09-19,MERCADOLIVRE*LEVER06/12,277.14,Outros,Pamela,2025-09-19,2371f86a-3f27-4fe6-8ede-6a03b07cde80
+2025-08-17,MERCADOPAGO *MERCA07/10,487.9,Outros,Pamela,2025-08-17,c90ad718-96ab-4b81-bc3e-84a2b632ebf9
+2025-08-12,MERCADOPAGO *MERCA07/10,1224.01,Outros,Pamela,2025-08-12,74ff8300-ddfc-4abb-afad-381ad0de9792
+2025-08-08,PORTO SEGURO CIA S07/10,221.91,Outros,Pamela,2025-08-08,d905521d-c44e-4625-9090-0c1b45bfbb85
+2025-08-05,PORTO SEGURO CIA S07/10,374.06,Outros,Pamela,2025-08-05,c18535c6-0767-48e3-81c5-c3b2a9386c97
+2025-01-22,EVO*Gislene Godoy 13/18,278.0,Outros,Pamela,2025-01-22,0f632d68-82ab-4b4b-8189-f03b1aae59ef
+2026-01-20,ANETO FOOD SERVICE,9.3,Outros,Pamela,2026-01-20,e44f4d23-e2a4-4001-a6e4-0fb5eface08a
+2026-01-20,BAR E LANCHES CACIQUE,44.99,Outros,Pamela,2026-01-20,a1bec315-0051-43b5-ad96-3b3a4e5eb259
+2026-01-19,ART DELLA PASTA PARMEG,69.0,Outros,Pamela,2026-01-19,77ac30d7-9f8a-461b-8a0a-30dcda524b00
+2026-01-19,ANETO FOOD SERVICE,4.65,Outros,Pamela,2026-01-19,fbd73c79-96fa-48fc-9853-5ac0b20aa63e
+2026-01-17,CASA ORIENTE,125.3,Outros,Pamela,2026-01-17,1b1c74d3-57fb-4ad5-9413-e772c7a8f616
+2026-01-17,RAIA1822,51.71,Outros,Pamela,2026-01-17,6aa811da-21da-48d9-929b-1cc69e183853
+2026-01-16,IFD*62720494 VINICIUS,54.99,Outros,Pamela,2026-01-16,c2b7f1ef-8d45-49b2-8380-196ab240b41e
+2026-01-15,ClinicaCrisc-CT   01/12,250.0,Outros,Pamela,2026-01-15,2f222e06-a90a-4a9f-981b-c1e9f19d9688
+2026-01-15,WWWEmba*EMB*Brasil01/03,715.64,Outros,Pamela,2026-01-15,afc8e9df-13e7-4c04-ac97-bd6af073ce79
+2026-01-15,LEAL PARK ESTACIONAMEN,15.0,Outros,Pamela,2026-01-15,b3658ad3-b42d-4007-9152-ec420affacf1
+2026-01-15,SHOPEE *FULLPOWER,77.99,Outros,Pamela,2026-01-15,9442452c-a1d6-4afc-b72c-85d3ccbd8b71
+2026-01-15,SHOPEE *Shop1001Utilid,35.9,Outros,Pamela,2026-01-15,b8d4cf29-1dec-4ac0-969d-ef38ede1a0da
+2026-01-14,IFD*ROLDAO AUTO SERVIC,1.64,Outros,Pamela,2026-01-14,16325b3c-3227-4914-80d3-835fd66a0e26
+2026-01-14,SHOPEE *SHPSTECNOLOGIA,21.5,Outros,Pamela,2026-01-14,a2269a8d-6ae5-4e3c-a99a-8c7b25345b5b
+2026-01-14,IFD*ROLDAO AUTO SERVIC,219.81,Outros,Pamela,2026-01-14,9d08e29f-7e80-4c9e-b4fa-e1813d0c3249
+2026-01-13,DIOGO ESTACIONAMENTO,25.0,Outros,Pamela,2026-01-13,e2858480-1850-4862-8d9e-83494bc5b691
+2026-01-13,PegPagExpres-CT a,13.4,Outros,Pamela,2026-01-13,55ba740f-617f-4eb5-9a4a-bdc028c60e7b
+2026-01-13,DAVI MASSAYUKI SO,45.85,Outros,Pamela,2026-01-13,dce4ff68-186e-414a-9d6b-4e632ca61d47
+2026-01-12,Banca700,30.0,Outros,Pamela,2026-01-12,e02fbeb0-bda2-417d-8596-e5c0884eb42e
+2026-01-12,RESTAURANTES FOGO E F,57.6,Outros,Pamela,2026-01-12,cc2eb3d5-1305-4abd-8524-d1fbdcfb9fb9
+2026-01-12,AMAZONMKTPLC*PAOLLADEM,20.05,Outros,Pamela,2026-01-12,ec3a46a8-ff02-4d48-abbe-a262f133a71c
+2026-01-12,CHOPERIA E RESTAURANTE,91.3,Outros,Pamela,2026-01-12,aff3e0ec-6bac-4469-8fa0-cb2dd3ec8061
+2026-01-12,AMAZON BR,115.0,Outros,Pamela,2026-01-12,8f7f9f8d-d487-4d36-8560-bbdfec15a95b
+2026-01-11,SUPERMERCARD-CT  VIDA,39.22,Outros,Pamela,2026-01-11,19310d3e-36f5-4ee6-bb6b-0d19bfc6522a
+2026-01-11,DA PRACA IMIGRANTES,41.36,Outros,Pamela,2026-01-11,4bf00078-c7e6-4e39-9947-7aab27e79b96
+2026-01-10,BIG SUPERMERCADOS,90.74,Outros,Pamela,2026-01-10,aef0f875-9b10-477d-b7ab-1a0c9ebc2b47
+2026-01-10,JIM.COM* CLINICA B01/05,110.8,Outros,Pamela,2026-01-10,2637d928-705e-4c89-b2fd-df062396c6fe
+2026-01-10,ZP*TAIZA PIR-CT 1 01/03,82.68,Outros,Pamela,2026-01-10,7e29e4fc-1d91-47da-9668-30499001865f
+2026-01-09,LIFE,94.9,Outros,Pamela,2026-01-09,e8642fd2-e382-4e06-88d6-769af398ed7a
+2026-01-09,LIFE,94.9,Outros,Pamela,2026-01-09,bbb3dff7-f156-465b-9f87-27c4f6162901
+2026-01-09,MC DONALDS,37.9,Outros,Pamela,2026-01-09,99c6f838-0f7e-4793-86bc-03953c2c37b2
+2026-01-09,EC          *EC*CLARO,20.0,Outros,Pamela,2026-01-09,df53a71b-e8da-460c-b568-6e2ff2db71f6
+2026-01-09,PEX*Segundo Tabeliao d,10.36,Outros,Pamela,2026-01-09,f15633f2-f293-4f1e-b0a0-3bdd156b05a1
+2026-01-06,RDSAUDE ONLINE,161.87,Outros,Pamela,2026-01-06,0f9c92ed-f1aa-4d8f-ac69-2b11a6e1eeda
+2026-01-06,MERCADOLIVRE*MERCADOL,151.8,Outros,Pamela,2026-01-06,a7255d75-2f45-47a8-bb10-500cc2dc0f70
+2026-01-06,MERCADOLIVRE*MEDSMELL,136.3,Outros,Pamela,2026-01-06,9636b192-939b-4225-b481-e39e5c77c5e3
+2026-01-05,TIMES OFFICE SANTA01/04,434.0,Outros,Pamela,2026-01-05,c120b519-5131-44eb-b56e-fce0a3e10b3d
+2026-01-04,MERCADAO SUPERMERCADO,44.79,Outros,Pamela,2026-01-04,ac9469f2-17be-43fb-b178-4650b804aa7c
+2026-01-04,GREENN**CAMALEON A01/12,19.58,Outros,Pamela,2026-01-04,b5bef23e-b151-4a30-8ec5-f3406ef3a8ec
+2026-01-04,PG *PORTAL SUPORTE MEI,-178.44,Outros,Pamela,2026-01-04,c4d86010-dc2c-45dc-afc2-66de683d151b
+2026-01-03,DROGARIA SAO PAULO SA,20.58,Outros,Pamela,2026-01-03,0fc3b0a6-26ac-45ad-81c2-fb60b23747fe
+2026-01-03,AlfaDescarta-CT,35.2,Outros,Pamela,2026-01-03,c4a569fc-a949-4a4c-8c9c-ebc41b70a0de
+2026-01-03,PADARIA COLM-CT,30.0,Outros,Pamela,2026-01-03,48fdffba-4940-465a-ad5b-b681f0f9a72c
+2026-01-02,PG *PORTAL SUPORTE11/12,14.87,Outros,Pamela,2026-01-02,3d98509c-a70f-48a2-a507-30758651e121
+2026-01-02,PG *PORTAL SUPORTE06/12,14.87,Outros,Pamela,2026-01-02,c7e930f0-bc8e-428b-80da-472f533e0a8b
+2026-01-02,PG *PORTAL SUPORTE01/12,14.87,Outros,Pamela,2026-01-02,a182a5d8-23f5-40d5-9876-f4d3f52b87b2
+2026-01-02,PG *PORTAL SUPORTE12/12,14.87,Outros,Pamela,2026-01-02,ebce9bb7-5bb6-461f-a01c-8394e4da803b
+2026-01-02,PG *PORTAL SUPORTE07/12,14.87,Outros,Pamela,2026-01-02,9bb27d70-568f-4877-a6ff-d576f6f6df38
+2026-01-02,PG *PORTAL SUPORTE02/12,14.87,Outros,Pamela,2026-01-02,de01c616-5f05-45f7-914f-c2b4d23aee0f
+2026-01-02,PG *PORTAL SUPORTE01/12,14.87,Outros,Pamela,2026-01-02,2a434f59-82a2-4117-8023-6b97a193b774
+2026-01-02,PG *PORTAL SUPORTE MEI,-178.0,Outros,Pamela,2026-01-02,ca9e7f7b-45f3-4817-ab17-ecc695bac066
+2026-01-02,PG *PORTAL SUPORTE08/12,14.87,Outros,Pamela,2026-01-02,6f59dc67-cc1f-4132-ae2b-ec91f9ecf704
+2026-01-02,PG *PORTAL SUPORTE03/12,14.87,Outros,Pamela,2026-01-02,a91e51c5-548b-4814-8e18-ad5e8af85610
+2026-01-02,PG *PORTAL SUPORTE MEI,-0.44,Outros,Pamela,2026-01-02,52678391-03bc-4286-a4f7-363504ec4666
+2026-01-02,PG *PORTAL SUPORTE10/12,14.87,Outros,Pamela,2026-01-02,b894858b-da75-4e76-a1dc-d2990bc1eed5
+2026-01-02,PG *PORTAL SUPORTE05/12,14.87,Outros,Pamela,2026-01-02,b3fbe33c-3d7e-43f0-9177-2b6e216111a8
+2026-01-02,MP *ALIEXPRESS,178.67,Outros,Pamela,2026-01-02,6e531777-f512-44b4-914b-3fb07bd5585e
+2026-01-02,PG *PORTAL SUPORTE MEI,-0.44,Outros,Pamela,2026-01-02,91a99183-2bba-46d4-8bd0-d2847437d36c
+2026-01-02,PG *PORTAL SUPORTE09/12,14.87,Outros,Pamela,2026-01-02,6eaee527-d17a-49f6-8de6-fe234cfc338c
+2026-01-02,PG *PORTAL SUPORTE04/12,14.87,Outros,Pamela,2026-01-02,4f348969-8589-46be-91c5-fca202dc391b
+2026-01-02,ZAE BRAGANCA,2.5,Outros,Pamela,2026-01-02,896a2420-a7e2-4150-aa0b-a4ef77ae8eb7
+2026-01-01,RAIA2580    -CT,37.91,Outros,Pamela,2026-01-01,1eec1ff5-44bd-4c92-a497-ac10746c13aa
+2025-12-30,MERCADOLIVRE*2PRODUTO,157.57,Outros,Pamela,2025-12-30,401e0aa7-37f2-4aa2-80a0-961b54e43608
+2025-12-30,MP *ROBERTAHAIR,120.0,Outros,Pamela,2025-12-30,2cd8bcba-b620-40f4-ba81-c6443864d8f8
+2025-12-30,FITOFAR MANIPULACAO EI,373.0,Outros,Pamela,2025-12-30,51478995-1d21-4679-b4a2-2a15c777d2d0
+2025-12-29,PAGAMENTO EFETUADO,-16529.96,Outros,Pamela,2025-12-29,72f4ab86-8391-4717-add4-730c33074a5a
+2025-12-29,MERCADOLIVRE*MERCADOL,157.98,Outros,Pamela,2025-12-29,dc8abf53-ef7c-4050-825e-5f36217ecbbf
+2025-12-28,PETZ ATACADO PET,316.4,Outros,Pamela,2025-12-28,d5a20cfa-caaa-49ac-920c-ab2cad07d358
+2025-12-28,CARREFOUR IT-CT A,3.69,Outros,Pamela,2025-12-28,e595b869-1417-4937-a58c-60ffbca9940c
+2025-12-28,SAMS RADIAL -CT,105.61,Outros,Pamela,2025-12-28,dff962c7-342e-4a7d-a7f1-11b952b7faf4
+2025-12-27,LONDON VALET ASAEL,10.0,Outros,Pamela,2025-12-27,d5c2cdd4-6a04-4618-a58a-c870d727d60a
+2025-12-27,THE BOX CAFE,94.5,Outros,Pamela,2025-12-27,807b6d6a-429b-460d-b9e2-5638e45b2390
+2025-12-27,GELAFRUTTI,21.0,Outros,Pamela,2025-12-27,906029a4-4e35-4cd9-84d6-732cc2115b6a
+2025-12-26,Google Play Books,39.0,Outros,Pamela,2025-12-26,b14d1b8d-19b8-41bf-9048-e35ebc675e75
+2025-12-25,TagItau*PAMELAGUERRA,50.0,Outros,Pamela,2025-12-25,7b9dba40-8bd8-4473-b88a-b6a7a2a9930a
+2025-12-22,MERCADOLIVRE*MERCADOL,64.8,Outros,Pamela,2025-12-22,3c366b11-4ad7-43de-b1ce-b9e76c754b9b
+2025-12-21,Google Audible Audio,19.9,Outros,Pamela,2025-12-21,12a6b990-6ecd-4450-a719-5ec12c237fb7
+2025-12-21,CONTA VIVO,150.0,Outros,Pamela,2025-12-21,4351aa4c-b1df-482e-83bb-9cf1046cafcb
+2025-12-21,AZOS SEGUROS*Azos Segu,292.77,Outros,Pamela,2025-12-21,49600de1-4d96-4e45-b974-96363d60636a
+2025-12-21,GELATERIA MIRACOLO,52.0,Outros,Pamela,2025-12-21,a8f9184e-6ff8-4c9b-8645-88639ee7b9e9
+2025-12-19,MLP*Estante V Edu 02/03,38.6,Outros,Pamela,2025-12-19,9a4a8d1a-8523-47f2-89d7-bcc34b01f073
+2025-12-17,ZP *ALIG INVISALIG02/12,487.5,Outros,Pamela,2025-12-17,d47b9995-edc4-41a3-9634-12df3553af94
+2025-12-15,Leiturinha S.A    02/12,65.8,Outros,Pamela,2025-12-15,e4552f53-63cb-42bf-b0bf-1e26e3698167
+2025-12-10,AIRBNB * HMP5XBM3E4,-0.05,Outros,Pamela,2025-12-10,d7afd148-842b-46fa-be91-97aa2762318b
+2025-12-10,AIRBNB * HMP5XBM3E02/06,381.3,Outros,Pamela,2025-12-10,e5f8a87f-0a65-4bee-9ae8-7dd6d1f0564c
+2025-12-06,ISAAC NEWTON      02/06,231.7,Outros,Pamela,2025-12-06,8eaf1bb1-f1db-40b6-9f88-5e5dd23d530a
+2025-12-06,ISAAC NEWTON,-0.2,Outros,Pamela,2025-12-06,9de9ae37-f74c-4261-af40-aa6580cdc876
+2025-12-02,DAFITI*4602381974 02/05,96.32,Outros,Pamela,2025-12-02,25ab17c2-ba27-4099-8f4e-78edfd8ba39c
+2025-12-02,DAFITI*4602381974,-0.04,Outros,Pamela,2025-12-02,fc7a349c-556c-4b6d-b8e8-adc777e25e17
+2025-11-29,OCEANE,-0.2,Outros,Pamela,2025-11-29,e60aea05-079c-4f36-bc34-4376c981d486
+2025-11-29,OCEANE            02/06,37.71,Outros,Pamela,2025-11-29,a3a22c22-d97d-49c3-877c-046e68cfdd4f
+2025-11-27,SHOPEE *MASXGENAI,-264.79,Outros,Pamela,2025-11-27,7009a3e7-f46c-42fa-b9ec-bcb6dcf4c117
+2025-11-19,FUNERARIA CRISTO R03/05,1760.0,Outros,Pamela,2025-11-19,b88226cf-9dcc-4425-bfec-f3db1ab7130c
+2025-11-04,MERCADOLIVRE*ASUS 03/12,1432.49,Outros,Pamela,2025-11-04,3c332828-f6da-492d-98ee-db8fed40be66
+2025-09-19,MERCADOLIVRE*LEVER05/12,277.14,Outros,Pamela,2025-09-19,5a3c2f21-2dca-4861-8d37-f808ffd5099c
+2025-08-17,MERCADOPAGO *MERCA06/10,487.9,Outros,Pamela,2025-08-17,7f221b10-0e41-40c7-b6a6-ce4e60ebe3ee
+2025-08-12,MERCADOPAGO *MERCA06/10,1224.01,Outros,Pamela,2025-08-12,18b619ef-e143-40af-9dda-bf97bd20a666
+2025-08-08,PORTO SEGURO CIA S06/10,221.91,Outros,Pamela,2025-08-08,6b5574c5-916e-4b02-88bb-e68fff05cff4
+2025-08-05,PORTO SEGURO CIA S06/10,374.06,Outros,Pamela,2025-08-05,d216f876-fc04-4c58-b900-ab237043a000
+2025-07-20,PIX PEROLA CATARIN06/06,381.43,Outros,Pamela,2025-07-20,e30be408-41a3-4639-b7a7-e40121f8ae8d
+2025-01-22,EVO*Gislene Godoy 12/18,278.0,Outros,Pamela,2025-01-22,488c430a-48c1-4621-ac93-7e1d25b69fe3
+2026-02-02,AMAZONMKTPLC*OLMECOMER,-47.0,Outros,Pamela,2026-02-02,cb7b9dbc-3aa8-4358-b719-878115c0b21c
+2026-02-02,IOF COMPRA INTERNACIONA,5.21,Outros,Pamela,2026-02-02,92cad31e-167e-481a-9ca8-8019d283cf32
+2026-02-02,IOF COMPRA INTERNACIONA,4.65,Outros,Pamela,2026-02-02,e73f0228-9485-44f2-beef-f936de074f66
+2026-02-02,IOF COMPRA INTERNACIONA,0.94,Outros,Pamela,2026-02-02,8703ca3d-3aa4-457d-b596-a5b609c8b4c8
+2026-02-01,HBL*HBLIURIMILHAS,-248.04,Outros,Pamela,2026-02-01,695442a1-de80-4909-bb8a-cea2a3318332
+2026-02-01,RATEPUNK US,149.52,Outros,Pamela,2026-02-01,9e241cc1-ff14-4d30-a828-8fd5a499dc72
+2026-02-01,RATEPUNK US,27.64,Outros,Pamela,2026-02-01,7b08accb-6e7c-4c5e-80ee-a246b8f360f7
+2026-02-01,CLAROWHATSAPPPAY,34.9,Outros,Pamela,2026-02-01,f191da5c-e348-4651-8d6e-94335429ee60
+2026-02-01,CantinhoDaCintia,20.0,Outros,Pamela,2026-02-01,747b2235-b37c-421b-86d8-a94ce5ff6001
+2026-02-01,RATEPUNK US,132.9,Outros,Pamela,2026-02-01,2b5afd9a-d1b8-4acf-b117-8758a89d989f
+2026-02-01,MP *PAMELABELLAGU,-10.54,Outros,Pamela,2026-02-01,e3f64bdd-9c9e-413a-b606-534e8c52d6b0
+2026-01-31,HBL*HBLIURIMILHAS 08/12,20.67,Outros,Pamela,2026-01-31,fbcf4edd-6462-4ee8-a5d2-c9e873bf708b
+2026-01-31,HBL*HBLIURIMILHAS 03/12,20.67,Outros,Pamela,2026-01-31,a82341e3-c342-4c38-94b0-429cc668d6ed
+2026-01-31,HBL*HBLIURIMILHAS 09/12,20.67,Outros,Pamela,2026-01-31,d50be279-e1ff-433d-8cfb-06e56a041f64
+2026-01-31,HBL*HBLIURIMILHAS 04/12,20.67,Outros,Pamela,2026-01-31,b83d1325-487f-40c4-801c-71fa6554ee1a
+2026-01-31,HBL*HBLIURIMILHAS 12/12,20.67,Outros,Pamela,2026-01-31,110eaae1-6b63-4939-956e-e3a0131a47ac
+2026-01-31,HBL*HBLIURIMILHAS 07/12,20.67,Outros,Pamela,2026-01-31,e28a3e5f-50c6-4215-bb54-32e27287a425
+2026-01-31,HBL*HBLIURIMILHAS 02/12,20.67,Outros,Pamela,2026-01-31,6428e962-86b6-4bfe-acf5-2a9f3e4d8fe8
+2026-01-31,HBL*HBLIURIMILHAS 11/12,20.67,Outros,Pamela,2026-01-31,5b1ff6fc-f3e4-4fc2-96fa-92eee4e4679f
+2026-01-31,HBL*HBLIURIMILHAS 06/12,20.67,Outros,Pamela,2026-01-31,ef7b4ed0-9b77-4a00-af11-059599bfca3a
+2026-01-31,HBL*HBLIURIMILHAS 10/12,20.67,Outros,Pamela,2026-01-31,923fa700-1eb2-46d3-ad1e-ecee4decf2e0
+2026-01-31,HBL*HBLIURIMILHAS 05/12,20.67,Outros,Pamela,2026-01-31,d8c623e3-824f-474c-a1fe-935b1ed373b1
+2026-01-31,HUBLA  *IURIMILHAS,10.0,Outros,Pamela,2026-01-31,42548d27-250e-4cc7-9537-a6593a8cb0db
+2026-01-31,LONDON VALET ASAEL,10.0,Outros,Pamela,2026-01-31,da6679b3-0a79-480b-b9d1-9a0ac5be19d2
+2026-01-31,HBL*HBLIURIMILHAS 01/12,20.67,Outros,Pamela,2026-01-31,2f82516c-5e8c-41a1-9a0a-aa2130509fbb
+2026-01-31,CLUBE*ESFERA      01/12,101.61,Outros,Pamela,2026-01-31,91b85d6e-94f5-4ca0-bbff-b90646434bc0
+2026-01-30,MP *PREFMUNBRAGANCAPA,136.97,Outros,Pamela,2026-01-30,3768f8e3-be3d-49c6-9057-8f4fa3e252e0
+2026-01-29,PORTAL LESTE,200.0,Outros,Pamela,2026-01-29,db970faf-327b-4496-acc4-70989cf2271d
+2026-01-29,MP *PAMELABELLAGU,10.54,Outros,Pamela,2026-01-29,4a5c1cbc-d896-4f1e-8202-56d76fd265a9
+2026-01-29,SAULO SALATIEL DE AL,30.0,Outros,Pamela,2026-01-29,92a6e414-24ea-44fb-b834-a57c65c216b6
+2026-01-28,ANETO FOOD SERVICE,12.1,Outros,Pamela,2026-01-28,cedb9430-95dd-462d-9086-eb000c0868ef
+2026-01-28,NUTRICAR BRASIL COMERC,17.39,Outros,Pamela,2026-01-28,9e9ca3b6-4ed5-460f-9f6b-328fa3aa9c2d
+2026-01-28,O PANELINHA RESTAURANT,54.9,Outros,Pamela,2026-01-28,f76bfe3c-320b-4db2-bca9-3f4a150b474c
+2026-01-28,LIVELO S.A.*Clube 01/12,123.46,Outros,Pamela,2026-01-28,b5002beb-0861-461f-8996-a3d77f83cd84
+2026-01-28,PmbMetro*1T2-CT 8-SO1L,5.4,Outros,Pamela,2026-01-28,67c78d14-3438-42dd-97f2-13007272f326
+2026-01-27,MERCADOLIVRE*2PROD01/04,33.74,Outros,Pamela,2026-01-27,925f57d6-943a-4aa1-8c4c-6fb8e0d514f1
+2026-01-27,MERCADOLIVRE*2PRODUTO,49.99,Outros,Pamela,2026-01-27,1a053897-b483-4076-bfe6-3118d1286fee
+2026-01-27,PAGAMENTO EFETUADO,-13346.48,Outros,Pamela,2026-01-27,6fcd5538-a1b5-47ba-9cd0-9f42e4861337
+2026-01-26,MP *SBWCOLOR,82.0,Outros,Pamela,2026-01-26,c7bdad24-7711-4639-af23-330935e034fd
+2026-01-26,O PANELINHA RESTAURANT,54.9,Outros,Pamela,2026-01-26,e51b6882-773c-4767-92f2-d4baf0278fa7
+2026-01-26,AMAZONMKTPLC*OLMEC01/06,36.85,Outros,Pamela,2026-01-26,99622c15-c47d-4078-acd5-63ccabd6642b
+2026-01-25,SHOPEE *UPTOPHOME,68.4,Outros,Pamela,2026-01-25,b0be019a-65c8-4d0e-aa30-5686d5ee84b1
+2026-01-24,PG *VAKINHA.COM CONTRI,1005.99,Outros,Pamela,2026-01-24,f44fb01e-82f1-4834-9270-aba43372978d
+2026-01-24,HTM         *comboJB,47.0,Outros,Pamela,2026-01-24,741d192b-9a1a-4e8e-a3d0-b4f6e226164f
+2026-01-24,HTM*150looks15pecas,47.0,Outros,Pamela,2026-01-24,d2d9a429-7236-4417-bd1d-ab263dfd96fa
+2026-01-24,ROLDAO MOOCA,261.4,Outros,Pamela,2026-01-24,7e4ef582-6ad3-4eaf-9867-c7591e064a91
+2026-01-23,IFD*Andrea Jean Saab,2.0,Outros,Pamela,2026-01-23,1244e49b-595a-47d0-bb05-a6e360933f77
+2026-01-23,IFD*62720494 VINICIUS,76.99,Outros,Pamela,2026-01-23,c1f6e39b-0f0c-4c14-8d30-3bf3ce9585f3
+2026-01-23,PG *EDITORA JADE LTDA,150.9,Outros,Pamela,2026-01-23,8d938396-c909-49c3-a9c5-511ae73cc251
+2026-01-22,SHOPEE *SalaCoz   01/02,86.82,Outros,Pamela,2026-01-22,968fa052-0bc7-4378-8db9-0f559585bf78
+2026-01-22,CHOPERIA E RESTAURANTE,55.0,Outros,Pamela,2026-01-22,42f37d95-28bc-43e4-83a1-e6adb8d33611
+2026-01-21,AZOS SEGUROS*Azos Segu,292.77,Outros,Pamela,2026-01-21,3a7e7ddf-7109-405d-8627-2ce22c165b76
+2026-01-21,PegPagExpressLtda,15.89,Outros,Pamela,2026-01-21,0545f440-b97a-4741-82fc-306d90a63686
+2026-01-21,PegPagExpressLtda,12.32,Outros,Pamela,2026-01-21,0cc831ca-5b66-437b-8821-80e20ece3bb6
+2026-01-20,Uber UBER *TRIP HELP.U,68.57,Outros,Pamela,2026-01-20,61262b9a-d126-4d7f-9f09-5d015f8be83a
+2026-01-15,ClinicaCrisc-CT   02/12,250.0,Outros,Pamela,2026-01-15,c779f4e0-e157-42f5-8525-38dd0804fb66
+2026-01-15,WWWEmba*EMB*Brasil02/03,715.64,Outros,Pamela,2026-01-15,96271a18-9bd3-414c-8af0-7fa41734c0a8
+2026-01-10,ZP*TAIZA PIR-CT 1 02/03,82.68,Outros,Pamela,2026-01-10,e766ff75-f78d-408c-9d77-ac46bb549bd6
+2026-01-10,JIM.COM* CLINICA B02/05,110.8,Outros,Pamela,2026-01-10,2b19b289-e8d2-4130-9f23-91d20dc5aef0
+2026-01-05,TIMES OFFICE SANTA02/04,434.0,Outros,Pamela,2026-01-05,f9f8e8e7-165d-4b9c-8cd1-a781f3a65113
+2026-01-04,GREENN**CAMALEON A02/12,19.58,Outros,Pamela,2026-01-04,6e2725b3-fc60-4ed2-bd46-25fbece9b6d0
+2026-01-02,PG *PORTAL SUPORTE02/12,14.87,Outros,Pamela,2026-01-02,89273c4f-fbf2-464a-88e3-2203602ff226
+2025-12-19,MLP*Estante V Edu 03/03,38.6,Outros,Pamela,2025-12-19,ce00b937-be16-4de9-856d-bd7fe51d89de
+2025-12-17,ZP *ALIG INVISALIG03/12,487.5,Outros,Pamela,2025-12-17,73f7a868-dc73-48cc-ba85-48d0cfbd10ad
+2025-12-15,Leiturinha S.A    03/12,65.8,Outros,Pamela,2025-12-15,80e49f1f-09ff-4675-9c08-544ccefb240b
+2025-12-10,AIRBNB * HMP5XBM3E03/06,381.3,Outros,Pamela,2025-12-10,228c6f12-cfa3-455e-a596-691321563898
+2025-12-06,ISAAC NEWTON      03/06,231.7,Outros,Pamela,2025-12-06,d12ba15a-f3a2-433c-b5ae-97ab21cc9800
+2025-12-02,DAFITI*4602381974 03/05,96.32,Outros,Pamela,2025-12-02,763b6386-e9f1-419b-b6b8-8d1c50481dce
+2025-11-29,OCEANE            03/06,37.71,Outros,Pamela,2025-11-29,a15b335a-79fa-41c1-9097-143126c2bbf5
+2025-11-19,FUNERARIA CRISTO R04/05,1760.0,Outros,Pamela,2025-11-19,e7e107eb-e0d3-4e0d-94cd-37b9b18bfb0e
+2025-11-04,MERCADOLIVRE*ASUS 04/12,1432.49,Outros,Pamela,2025-11-04,4132e457-28d5-4bfe-83a8-4b3ce6b91b17
+2025-09-19,MERCADOLIVRE*LEVER06/12,277.14,Outros,Pamela,2025-09-19,f20fb3f4-6dd3-40fb-a903-c7d8f7e36840
+2025-08-17,MERCADOPAGO *MERCA07/10,487.9,Outros,Pamela,2025-08-17,9235a576-d3be-4262-9489-ac5d7bb252e0
+2025-08-12,MERCADOPAGO *MERCA07/10,1224.01,Outros,Pamela,2025-08-12,ecf3e74b-ca5b-42f5-8281-f93dc90e6782
+2025-08-08,PORTO SEGURO CIA S07/10,221.91,Outros,Pamela,2025-08-08,9d39a4d1-746b-48e2-83b4-303baafa1e9d
+2025-08-05,PORTO SEGURO CIA S07/10,374.06,Outros,Pamela,2025-08-05,36dba134-6520-4df0-8d59-9f6bb26f658d
+2025-01-22,EVO*Gislene Godoy 13/18,278.0,Outros,Pamela,2025-01-22,1e25eebf-8380-4f17-8ff5-481d341ac294
+2026-01-20,ANETO FOOD SERVICE,9.3,Outros,Pamela,2026-01-20,eb34e0b4-21cd-44be-80b0-e5e47f67305d
+2026-01-20,BAR E LANCHES CACIQUE,44.99,Outros,Pamela,2026-01-20,84d9f486-ab72-4b51-91fa-c2406f075079
+2026-01-19,ART DELLA PASTA PARMEG,69.0,Outros,Pamela,2026-01-19,8c0f9aed-bef1-48d1-8e9e-7336165027a1
+2026-01-19,ANETO FOOD SERVICE,4.65,Outros,Pamela,2026-01-19,52cac9fd-d1a9-47a4-9a22-fd2125554eb7
+2026-01-17,CASA ORIENTE,125.3,Outros,Pamela,2026-01-17,8927dfb4-dc9a-4558-b137-ded85aeb2640
+2026-01-17,RAIA1822,51.71,Outros,Pamela,2026-01-17,4c04abe6-872a-427f-9e01-6a1ac89e146e
+2026-01-16,IFD*62720494 VINICIUS,54.99,Outros,Pamela,2026-01-16,25b28470-a9ef-4854-830c-9f2c80bb91e6
+2026-01-15,ClinicaCrisc-CT   01/12,250.0,Outros,Pamela,2026-01-15,f61c9994-8713-454a-acef-17c7ad946db6
+2026-01-15,WWWEmba*EMB*Brasil01/03,715.64,Outros,Pamela,2026-01-15,71388ce6-2d5e-43da-b029-0a9d2ab43980
+2026-01-15,LEAL PARK ESTACIONAMEN,15.0,Outros,Pamela,2026-01-15,0182f37d-069f-4f2f-8825-f16074b8bef0
+2026-01-15,SHOPEE *FULLPOWER,77.99,Outros,Pamela,2026-01-15,f72b406a-8963-4407-b3b7-df4f0f6a8c0a
+2026-01-15,SHOPEE *Shop1001Utilid,35.9,Outros,Pamela,2026-01-15,78a73ea3-7053-4553-9f80-c23873857275
+2026-01-14,IFD*ROLDAO AUTO SERVIC,1.64,Outros,Pamela,2026-01-14,801ef54c-2589-4295-a59a-ef64898c6de0
+2026-01-14,SHOPEE *SHPSTECNOLOGIA,21.5,Outros,Pamela,2026-01-14,5f3a4310-e78b-4b63-ba1c-0619b5737967
+2026-01-14,IFD*ROLDAO AUTO SERVIC,219.81,Outros,Pamela,2026-01-14,c01c91c3-0328-4a95-94de-66e26dcb7f74
+2026-01-13,DIOGO ESTACIONAMENTO,25.0,Outros,Pamela,2026-01-13,382f295c-153c-4c3e-a0a1-c9d89885f9d0
+2026-01-13,PegPagExpres-CT a,13.4,Outros,Pamela,2026-01-13,21b00de2-a2fc-4590-9e7b-d0ebe70ae9ac
+2026-01-13,DAVI MASSAYUKI SO,45.85,Outros,Pamela,2026-01-13,97a78263-fc19-482b-a627-9236e187a2f3
+2026-01-12,Banca700,30.0,Outros,Pamela,2026-01-12,968409f1-657f-41e2-80c4-7eddc9c9c257
+2026-01-12,RESTAURANTES FOGO E F,57.6,Outros,Pamela,2026-01-12,892da853-f915-42b0-91f7-0f81c8aeeb81
+2026-01-12,AMAZONMKTPLC*PAOLLADEM,20.05,Outros,Pamela,2026-01-12,76ad678f-f8db-4ec4-a873-5f2a79097b57
+2026-01-12,CHOPERIA E RESTAURANTE,91.3,Outros,Pamela,2026-01-12,785ce2f0-ffc4-444c-bf0d-55366e06ce08
+2026-01-12,AMAZON BR,115.0,Outros,Pamela,2026-01-12,74f8d009-f6f4-41dd-b714-cabc5fb96d69
+2026-01-11,SUPERMERCARD-CT  VIDA,39.22,Outros,Pamela,2026-01-11,a016af44-e76d-47dd-8973-503a9c4be654
+2026-01-11,DA PRACA IMIGRANTES,41.36,Outros,Pamela,2026-01-11,c7d89e08-904d-4456-8ace-8417071cadb0
+2026-01-10,BIG SUPERMERCADOS,90.74,Outros,Pamela,2026-01-10,8154dd54-4586-43f7-8515-2434d4bc0be8
+2026-01-10,JIM.COM* CLINICA B01/05,110.8,Outros,Pamela,2026-01-10,17b29693-c0fc-427e-97e5-cd2d9befad96
+2026-01-10,ZP*TAIZA PIR-CT 1 01/03,82.68,Outros,Pamela,2026-01-10,3295e658-1d4f-4cdb-929e-6ebec52e3536
+2026-01-09,LIFE,94.9,Outros,Pamela,2026-01-09,59653811-4e2d-4d0e-b238-891346b61de0
+2026-01-09,LIFE,94.9,Outros,Pamela,2026-01-09,fa1878e8-f317-4a6b-9ac6-81eb3ac26be6
+2026-01-09,MC DONALDS,37.9,Outros,Pamela,2026-01-09,c7e7fa94-512f-4c69-aa3b-7a793fcffee5
+2026-01-09,EC          *EC*CLARO,20.0,Outros,Pamela,2026-01-09,7fb4fb39-fb8e-4e67-951a-42165898b9b6
+2026-01-09,PEX*Segundo Tabeliao d,10.36,Outros,Pamela,2026-01-09,de85419b-e65f-4efa-886c-521ce7b8934f
+2026-01-06,RDSAUDE ONLINE,161.87,Outros,Pamela,2026-01-06,7b40cde5-4c61-480e-a6ce-9221245d6062
+2026-01-06,MERCADOLIVRE*MERCADOL,151.8,Outros,Pamela,2026-01-06,03a4626e-5023-4e97-87c7-d256ccdec5d2
+2026-01-06,MERCADOLIVRE*MEDSMELL,136.3,Outros,Pamela,2026-01-06,80cfa972-f04d-45b4-a14c-263b039f7f1e
+2026-01-05,TIMES OFFICE SANTA01/04,434.0,Outros,Pamela,2026-01-05,fbf69885-463a-4eaa-bcc9-014abaf51aeb
+2026-01-04,MERCADAO SUPERMERCADO,44.79,Outros,Pamela,2026-01-04,67fbae61-c2d4-42c7-85c0-f1c1a2e86b60
+2026-01-04,GREENN**CAMALEON A01/12,19.58,Outros,Pamela,2026-01-04,a614785d-7ee5-462f-9404-a3be51a7dbe3
+2026-01-04,PG *PORTAL SUPORTE MEI,-178.44,Outros,Pamela,2026-01-04,d84fcfea-28f7-4b60-834f-c209195a9b8d
+2026-01-03,DROGARIA SAO PAULO SA,20.58,Outros,Pamela,2026-01-03,2aa84b9a-d011-4e2e-9623-896a99ebb8c4
+2026-01-03,AlfaDescarta-CT,35.2,Outros,Pamela,2026-01-03,69c4bfc6-12c9-4060-908d-877ca5b67ffa
+2026-01-03,PADARIA COLM-CT,30.0,Outros,Pamela,2026-01-03,71fc56fa-4003-426f-8a23-8e23048b9b7c
+2026-01-02,PG *PORTAL SUPORTE11/12,14.87,Outros,Pamela,2026-01-02,f783a3b7-cfc3-4f98-ab13-6745c49587d9
+2026-01-02,PG *PORTAL SUPORTE06/12,14.87,Outros,Pamela,2026-01-02,1cf31aad-d2a0-4300-98bb-91979689d6f0
+2026-01-02,PG *PORTAL SUPORTE01/12,14.87,Outros,Pamela,2026-01-02,0202c97d-f690-4c7d-9cf7-edc356b096a9
+2026-01-02,PG *PORTAL SUPORTE12/12,14.87,Outros,Pamela,2026-01-02,90432c90-25de-4a04-b941-7e13759aef47
+2026-01-02,PG *PORTAL SUPORTE07/12,14.87,Outros,Pamela,2026-01-02,21364e8c-fe51-4845-bf27-5c48efee075a
+2026-01-02,PG *PORTAL SUPORTE02/12,14.87,Outros,Pamela,2026-01-02,db23504e-c0c2-447a-973f-e44fed8d3bb7
+2026-01-02,PG *PORTAL SUPORTE01/12,14.87,Outros,Pamela,2026-01-02,bfe09620-a857-4778-b528-ca4faeaef3a5
+2026-01-02,PG *PORTAL SUPORTE MEI,-178.0,Outros,Pamela,2026-01-02,66c67a33-173e-484c-8cf0-1f076a4ddd47
+2026-01-02,PG *PORTAL SUPORTE08/12,14.87,Outros,Pamela,2026-01-02,de411944-a7a6-4629-b996-28a1f4db2a92
+2026-01-02,PG *PORTAL SUPORTE03/12,14.87,Outros,Pamela,2026-01-02,92c625a0-c235-4aab-b6c4-d81a02463849
+2026-01-02,PG *PORTAL SUPORTE MEI,-0.44,Outros,Pamela,2026-01-02,c33b9a9a-3096-4c70-91a8-e0951d31ab6f
+2026-01-02,PG *PORTAL SUPORTE10/12,14.87,Outros,Pamela,2026-01-02,e124bb5b-cd50-483d-966e-70c2e33712d0
+2026-01-02,PG *PORTAL SUPORTE05/12,14.87,Outros,Pamela,2026-01-02,2220cce0-2b0d-449b-a87e-1aa603977863
+2026-01-02,MP *ALIEXPRESS,178.67,Outros,Pamela,2026-01-02,02cbeb39-cb6f-4611-9e21-c4d457521b45
+2026-01-02,PG *PORTAL SUPORTE MEI,-0.44,Outros,Pamela,2026-01-02,773caaf6-524e-44a3-80a6-3bfa85530b59
+2026-01-02,PG *PORTAL SUPORTE09/12,14.87,Outros,Pamela,2026-01-02,dc279572-94da-46ec-9ddf-69f6cd27be91
+2026-01-02,PG *PORTAL SUPORTE04/12,14.87,Outros,Pamela,2026-01-02,63cc9e35-623e-4586-a1a2-aaf1b8a93fe3
+2026-01-02,ZAE BRAGANCA,2.5,Outros,Pamela,2026-01-02,ce79a8a7-476c-4efc-b01a-224712d3da56
+2026-01-01,RAIA2580    -CT,37.91,Outros,Pamela,2026-01-01,ecc17a2d-e549-4291-988d-b9975c8a3493
+2025-12-30,MERCADOLIVRE*2PRODUTO,157.57,Outros,Pamela,2025-12-30,77669140-5b8d-4f3a-ba28-60477e3c1670
+2025-12-30,MP *ROBERTAHAIR,120.0,Outros,Pamela,2025-12-30,f6f4e402-e3db-4475-bab9-5c92b813b897
+2025-12-30,FITOFAR MANIPULACAO EI,373.0,Outros,Pamela,2025-12-30,8487bc8f-202e-4f3e-a207-4ccd7e2cf537
+2025-12-29,PAGAMENTO EFETUADO,-16529.96,Outros,Pamela,2025-12-29,4f9982c9-77fd-468c-851a-1d8b91588df3
+2025-12-29,MERCADOLIVRE*MERCADOL,157.98,Outros,Pamela,2025-12-29,3976e769-a579-49de-b1b6-542483876dcf
+2025-12-28,PETZ ATACADO PET,316.4,Outros,Pamela,2025-12-28,2db79794-ae81-4bd7-a7ef-5f48a70e787d
+2025-12-28,CARREFOUR IT-CT A,3.69,Outros,Pamela,2025-12-28,efe0fa54-5b5c-46e8-9ba9-a572c13a26ba
+2025-12-28,SAMS RADIAL -CT,105.61,Outros,Pamela,2025-12-28,594b220f-e0be-46be-b5ee-564d1c2b3325
+2025-12-27,LONDON VALET ASAEL,10.0,Outros,Pamela,2025-12-27,55973af9-be2a-4b5a-b638-3cbe5ebed357
+2025-12-27,THE BOX CAFE,94.5,Outros,Pamela,2025-12-27,cf539893-d72f-4055-81bc-d5df3561d0e6
+2025-12-27,GELAFRUTTI,21.0,Outros,Pamela,2025-12-27,ba6410f6-47d8-4b07-8018-eba2d46ec819
+2025-12-26,Google Play Books,39.0,Outros,Pamela,2025-12-26,0de886ce-acff-4a31-ac8a-0cda500b914d
+2025-12-25,TagItau*PAMELAGUERRA,50.0,Outros,Pamela,2025-12-25,a154885c-1f9e-48ac-b172-15258a6261fe
+2025-12-22,MERCADOLIVRE*MERCADOL,64.8,Outros,Pamela,2025-12-22,63cb8f2d-1b75-4e63-8b11-0a14be51cc91
+2025-12-21,Google Audible Audio,19.9,Outros,Pamela,2025-12-21,614946c9-c4fe-4445-b660-14cf3aa7f208
+2025-12-21,CONTA VIVO,150.0,Outros,Pamela,2025-12-21,0dfd0c83-da4c-48ca-8903-3b522d566a68
+2025-12-21,AZOS SEGUROS*Azos Segu,292.77,Outros,Pamela,2025-12-21,fedca846-3db9-4371-99ac-820dcf2e6015
+2025-12-21,GELATERIA MIRACOLO,52.0,Outros,Pamela,2025-12-21,68be4618-3c25-4cb6-8a49-25c002378547
+2025-12-19,MLP*Estante V Edu 02/03,38.6,Outros,Pamela,2025-12-19,685c48e9-59ee-45b5-afc9-ada84efc1d31
+2025-12-17,ZP *ALIG INVISALIG02/12,487.5,Outros,Pamela,2025-12-17,3a7b85e8-a177-4982-b0aa-f3baff17188e
+2025-12-15,Leiturinha S.A    02/12,65.8,Outros,Pamela,2025-12-15,5dc1b6e5-abf8-48ae-825b-a0259974b5cf
+2025-12-10,AIRBNB * HMP5XBM3E4,-0.05,Outros,Pamela,2025-12-10,19851995-4dde-4cc4-8aca-c64295ac653e
+2025-12-10,AIRBNB * HMP5XBM3E02/06,381.3,Outros,Pamela,2025-12-10,e7d4df88-5ff9-4117-b559-cd00b0e937ca
+2025-12-06,ISAAC NEWTON      02/06,231.7,Outros,Pamela,2025-12-06,27060c7a-d1d0-4384-8a13-a6532446ca8d
+2025-12-06,ISAAC NEWTON,-0.2,Outros,Pamela,2025-12-06,ed3aa874-a497-4c16-aa50-cc514f9ce784
+2025-12-02,DAFITI*4602381974 02/05,96.32,Outros,Pamela,2025-12-02,316df20d-8f76-47f5-b97d-22b55be0667f
+2025-12-02,DAFITI*4602381974,-0.04,Outros,Pamela,2025-12-02,17d84864-61bb-4733-80bc-c53083f439f1
+2025-11-29,OCEANE,-0.2,Outros,Pamela,2025-11-29,7c938fe9-74cd-4728-83ce-9694fdab0b9d
+2025-11-29,OCEANE            02/06,37.71,Outros,Pamela,2025-11-29,9396c960-f5f8-4ead-84cc-6ef4191f526c
+2025-11-27,SHOPEE *MASXGENAI,-264.79,Outros,Pamela,2025-11-27,f9a99f5e-516e-4b98-9d1a-b1809e19b7c6
+2025-11-19,FUNERARIA CRISTO R03/05,1760.0,Outros,Pamela,2025-11-19,e3c345cb-acea-47f4-9037-c969e3086a05
+2025-11-04,MERCADOLIVRE*ASUS 03/12,1432.49,Outros,Pamela,2025-11-04,78a8d5e4-cbee-46bf-ba5f-9facfaa7e841
+2025-09-19,MERCADOLIVRE*LEVER05/12,277.14,Outros,Pamela,2025-09-19,2291dbbd-3ea7-4006-bd02-f978004ad5c8
+2025-08-17,MERCADOPAGO *MERCA06/10,487.9,Outros,Pamela,2025-08-17,baff602c-96a9-494a-9522-b5a888fbd98b
+2025-08-12,MERCADOPAGO *MERCA06/10,1224.01,Outros,Pamela,2025-08-12,f09e26e2-82ca-4c91-8a5f-16303f820743
+2025-08-08,PORTO SEGURO CIA S06/10,221.91,Outros,Pamela,2025-08-08,f4bc834d-78a6-4505-9799-e345b9027ddb
+2025-08-05,PORTO SEGURO CIA S06/10,374.06,Outros,Pamela,2025-08-05,467d74dc-89f1-4efd-9196-1a64b5512c86
+2025-07-20,PIX PEROLA CATARIN06/06,381.43,Outros,Pamela,2025-07-20,52ae375e-d1ed-4bc9-90ee-55b5ea4adc3d
+2025-01-22,EVO*Gislene Godoy 12/18,278.0,Outros,Pamela,2025-01-22,9721f952-26cb-4050-bcb3-c51f33d609ec

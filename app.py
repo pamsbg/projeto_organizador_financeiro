@@ -284,14 +284,21 @@ with tab3:
 
     # --- MÁGICO DE CATEGORIZAÇÃO ---
     if not df.empty:
-        with st.expander("🧙‍♂️ Mágico de Categorização (Regras Inteligentes)"):
-            st.write("Analisa suas transações e sugere categorias com base em palavras-chave (Nowpark → Transporte, Uber → Transporte, etc).")
+        import ml_patterns  # Importação do módulo de aprendizado
+        
+        with st.expander("🧙‍♂️ Mágico de Categorização (Regras + Aprendizado)"):
+            st.write("Analisa suas transações usando:")
+            st.markdown("- **Regras fixas** (Nowpark → Transporte, Uber → Transporte, etc)")
+            st.markdown("- **Padrões aprendidos** das suas categorizações manuais anteriores")
             
             col_wiz1, col_wiz2 = st.columns(2)
             with col_wiz1:
                 wiz_target = st.radio("Escopo da Busca:", ["Apenas 'Outros'", "Todas as Categorias"], index=0)
             
             if st.button("🔍 Buscar Sugestões"):
+                # Aprende com dados históricos
+                learned_patterns = ml_patterns.learn_patterns_from_data(df)
+                
                 wiz_suggestions = []
                 for idx, row in df.iterrows():
                     # Pular categorias de sistema/pagamento
@@ -302,8 +309,12 @@ with tab3:
                     if wiz_target == "Apenas 'Outros'" and row['category'] not in ['Outros', '', 'Geral']: 
                         continue
 
-                    # Tenta categorizar usando as regras
+                    # 1. Tenta regras fixas primeiro
                     suggested = utils.categorize_transaction(row['title'])
+                    
+                    # 2. Se regras não deram resultado, usa aprendizado
+                    if not suggested or suggested == 'Outros':
+                        suggested = ml_patterns.suggest_category_from_learned(row['title'], learned_patterns)
                     
                     # Se sugeriu algo novo e diferente de 'Outros'
                     if suggested and suggested != row['category'] and suggested != 'Outros':
@@ -319,8 +330,9 @@ with tab3:
                 if wiz_suggestions:
                     st.session_state.wiz_suggestions = pd.DataFrame(wiz_suggestions)
                     st.success(f"Encontrei {len(wiz_suggestions)} sugestões!")
+                    st.info(f"📚 Aprendi padrões de {len(learned_patterns)} palavras-chave do seu histórico.")
                 else:
-                    st.info("Nenhuma sugestão nova encontrada com as regras atuais.")
+                    st.info("Nenhuma sugestão nova encontrada.")
                     if 'wiz_suggestions' in st.session_state: 
                         del st.session_state.wiz_suggestions
             
@@ -340,21 +352,22 @@ with tab3:
                     key="wizard_table"
                 )
                 
-                if st.button("✨ Aplicar Selecionados"):
+                if st.button("✨ Aplicar Selecionados", key="wizard_apply_btn"):
                     count = 0
                     for index, row in edited_wiz.iterrows():
                         if row["Aplicar?"]:
-                            # Atualiza DataFrame Principal usando ID
-                            mask = df['id'] == row['id']
-                            df.loc[mask, 'category'] = row['Nova Sugestão']
+                            # CORREÇÃO: Atualiza DataFrame Principal (st.session_state.df) usando ID
+                            mask = st.session_state.df['id'] == row['id']
+                            st.session_state.df.loc[mask, 'category'] = row['Nova Sugestão']
                             count += 1
                     
                     if count > 0:
-                        utils.save_data(df)
-                        st.session_state.df = df # Atualiza Sessão
+                        utils.save_data(st.session_state.df)
                         st.success(f"{count} transações categorizadas com sucesso!")
                         del st.session_state.wiz_suggestions
                         st.rerun()
+    # ------------------------------------
+
     # ------------------------------------
 
     # Filtros (Só mostra se tiver dados, mas o editor aparece sempre)

@@ -2,11 +2,12 @@
 __pycache__/
 *.pyc
 
-# Data (Protecting Personal Information)
+# Dados - NÃO VERSIONAR (Dados Pessoais)
 *.csv
 *.xlsx
 *.json
-*.bak
+!requirements.json
+settings.json
 
 # Streamlit
 .streamlit/
