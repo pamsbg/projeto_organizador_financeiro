@@ -511,29 +511,32 @@ with tab6:
     
     # 2. Calcular Gastos Reais (Reference Date)
     real_expenses = pd.Series([0.0]*12, index=range(1, 13))
-    if not df.empty and 'reference_date' in df.columns:
-        # Prevenção de erro: Cria a coluna se não existir
-        df['ref_dt'] = pd.to_datetime(df['reference_date'])
-        
-        # Aplicar filtro de pessoa também na projeção? 
-        # Geralmente projeção é familiar, mas se quiser filtrar:
-        # Pega do filtro da Tab 1 se estiver em session state ou cria local?
-        # Vamos criar um local para dar poder.
-        
-        mask_exp = (df['ref_dt'].dt.year == proj_year) & (df['category'] != 'Pagamento/Crédito') & (df['amount'] > 0)
-        
-        # Filtro opcional de dono
-        # Filtro opcional de dono
-        if owner_filter != "Todos": 
-             if 'owner' not in df.columns: df['owner'] = "Família"
-             mask_exp = mask_exp & (df['owner'] == owner_filter)
-             st.caption(f"Fluxo de Caixa apenas de: **{owner_filter}**")
-        else:
-             st.caption("Fluxo de Caixa **Consolidado (Família)**")
+    
+    # ---------------------------------------------------------
+    # PROTEÇÃO CONTRA BASE VAZIA (SISTEMA ONLINE/CLOUD)
+    # ---------------------------------------------------------
+    if df.empty or 'reference_date' not in df.columns:
+        st.info("ℹ️ **Nenhum dado financeiro encontrado para projeção.**")
+        st.markdown("Para ver os gráficos de fluxo de caixa:\n1. Vá na aba **Importar**.\n2. Suba seus arquivos CSV (Faturas/Extratos).")
+        st.stop() # Interrompe a execução aqui para não dar erro lá embaixo
+    
+    # Se chegou aqui, temos dados!
+    # Prevenção de erro: Cria a coluna se não existir
+    df['ref_dt'] = pd.to_datetime(df['reference_date'])
+    
+    mask_exp = (df['ref_dt'].dt.year == proj_year) & (df['category'] != 'Pagamento/Crédito') & (df['amount'] > 0)
+    
+    # Filtro opcional de dono
+    if owner_filter != "Todos": 
+         if 'owner' not in df.columns: df['owner'] = "Família"
+         mask_exp = mask_exp & (df['owner'] == owner_filter)
+         st.caption(f"Fluxo de Caixa apenas de: **{owner_filter}**")
+    else:
+         st.caption("Fluxo de Caixa **Consolidado (Família)**")
 
-        expenses_grouped = df[mask_exp].groupby(df['ref_dt'].dt.month)['amount'].sum()
-        for m in expenses_grouped.index:
-            real_expenses[m] = expenses_grouped[m]
+    expenses_grouped = df[mask_exp].groupby(df['ref_dt'].dt.month)['amount'].sum()
+    for m in expenses_grouped.index:
+        real_expenses[m] = expenses_grouped[m]
 
     # 3. Montar Gráfico
     months_list = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
