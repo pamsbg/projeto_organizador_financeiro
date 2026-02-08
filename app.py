@@ -134,7 +134,34 @@ with tab1:
     st.header("💰 Gerenciar Entradas (Salários, Rendas)")
     st.markdown("Adicione aqui suas fontes de renda. Você pode detalhar por data e pessoa.")
     
+    # Filtro de Mês/Ano
+    col_rec_filter1, col_rec_filter2 = st.columns(2)
+    with col_rec_filter1:
+        months = {0: "Todos", 1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 5: "Maio", 
+                  6: "Junho", 7: "Julho", 8: "Agosto", 9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"}
+        current_month = datetime.now().month
+        selected_month_rec = st.selectbox("Mês", options=list(months.keys()), format_func=lambda x: months[x], 
+                                          index=current_month, key="rec_month")  # Default: mês atual
+    
+    with col_rec_filter2:
+        current_year = datetime.now().year
+        years = [0] + list(range(2024, 2031))
+        selected_year_rec = st.selectbox("Ano", options=years, format_func=lambda x: "Todos" if x == 0 else str(x), 
+                                         index=years.index(current_year) if current_year in years else 0, key="rec_year")
+    
     income_df = utils.load_income_data()
+    
+    # Aplicar filtro de mês/ano
+    if not income_df.empty and 'date' in income_df.columns:
+        income_df['date'] = pd.to_datetime(income_df['date'], errors='coerce')
+        
+        # Filtrar por mês (0 = Todos)
+        if selected_month_rec != 0:
+            income_df = income_df[income_df['date'].dt.month == selected_month_rec]
+        
+        # Filtrar por ano (0 = Todos)
+        if selected_year_rec != 0:
+            income_df = income_df[income_df['date'].dt.year == selected_year_rec]
     
     # Filtro Visual (Se selecionado pessoa específica)
     if owner_filter != "Todos":
@@ -330,10 +357,11 @@ with tab3:
                         "id": row['id'],
                         "Data": row['date'],
                         "Descrição": row['title'],
-                        "Valor": row['amount'],  # NOVO: Mostrar valor
+                        "Valor": row['amount'],
+                        "Pessoa": row.get('owner', 'Família'),  # NOVO: Mostrar pessoa
                         "Categoria Atual": row['category'],
-                        "Nova Categoria": suggested,  # Agora é "Nova Categoria" e editável
-                        "Aplicar?": True if suggested else False  # Desmarca se não tem sugestão
+                        "Nova Categoria": suggested,
+                        "Aplicar?": True if suggested else False
                     })
                 
                 if wiz_suggestions:
@@ -359,14 +387,15 @@ with tab3:
                             "Valor (R$)",
                             format="R$ %.2f"
                         ),
+                        "Pessoa": st.column_config.TextColumn("Pessoa"),
                         "Nova Categoria": st.column_config.SelectboxColumn(
                             "Nova Categoria",
-                            options=[""] + settings["categories"],  # "" = não alterar
+                            options=[""] + settings["categories"],
                             required=False
                         ),
                         "Aplicar?": st.column_config.CheckboxColumn("Aplicar?", default=True)
                     },
-                    disabled=["Data", "Descrição", "Valor", "Categoria Atual"],  # "Nova Categoria" é EDITÁVEL agora
+                    disabled=["Data", "Descrição", "Valor", "Pessoa", "Categoria Atual"],
                     hide_index=True,
                     use_container_width=True,
                     key="wizard_table"
