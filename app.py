@@ -511,7 +511,8 @@ with tab6:
     
     # 2. Calcular Gastos Reais (Reference Date)
     real_expenses = pd.Series([0.0]*12, index=range(1, 13))
-    if not df.empty:
+    if not df.empty and 'reference_date' in df.columns:
+        # Prevenção de erro: Cria a coluna se não existir
         df['ref_dt'] = pd.to_datetime(df['reference_date'])
         
         # Aplicar filtro de pessoa também na projeção? 
