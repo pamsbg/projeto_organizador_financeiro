@@ -349,24 +349,40 @@ def extract_date_from_filename(filename):
             'setembro': 9, 'set': 9,
             'outubro': 10, 'out': 10,
             'novembro': 11, 'nov': 11,
-            'dezembro': 12, 'dez': 12
-        }
-        
-        found_month = None
-        for name, num in months_pt.items():
-            if name in filename:
-                found_month = num
-                break
-        
-        # Se achou mês, tenta achar ano (4 dígitos)
-        if found_month:
-            match_year = re.search(r'(\d{4})', filename)
-            year = int(match_year.group(1)) if match_year else today.year
-            return found_month, year
-            
-        return None, None
-    except:
-        return None, None
+    """
+    Tenta extrair mês e ano do nome do arquivo.
+    Suporta formatos: YYYY-MM, YYYYMM, YYYY-MM-DD, YYYYMMDD
+    Retorna (month, year) ou (None, None) se não conseguir.
+    """
+    import re
+    
+    # Padrão 1: YYYY-MM ou YYYY-MM-DD (ex: 2026-02, 2026-02-15)
+    match = re.search(r'(\d{4})-(\d{2})(?:-\d{2})?', filename)
+    if match:
+        year = int(match.group(1))
+        month = int(match.group(2))
+        if 1 <= month <= 12 and 2020 <= year <= 2050:
+            return month, year
+    
+    # Padrão 2: YYYYMMDD (ex: 20260128 -> Jan/2026)
+    match = re.search(r'(\d{4})(\d{2})(\d{2})', filename)
+    if match:
+        year = int(match.group(1))
+        month = int(match.group(2))
+        day = int(match.group(3))  # Ignoramos o dia, mas validamos
+        if 1 <= month <= 12 and 1 <= day <= 31 and 2020 <= year <= 2050:
+            return month, year
+    
+    # Padrão 3: YYYYMM (ex: 202602)
+    match = re.search(r'(\d{6})', filename)
+    if match:
+        year_month = match.group(1)
+        year = int(year_month[:4])
+        month = int(year_month[4:6])
+        if 1 <= month <= 12 and 2020 <= year <= 2050:
+            return month, year
+    
+    return None, None
 
 def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
     """Processa arquivo CSV genérico (vários bancos) e retorna DataFrame padronizado."""

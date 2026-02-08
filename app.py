@@ -214,9 +214,13 @@ with tab2:
         if uploaded_file:
              extracted_month, extracted_year = utils.extract_date_from_filename(uploaded_file.name)
              if extracted_month and extracted_year:
-                 default_month = extracted_month
-                 default_year = extracted_year
-                 st.success(f"🗓️ Detectado: {months[default_month]}/{default_year}")
+                 # Validar que o mês está no range válido
+                 if 1 <= extracted_month <= 12 and 2020 <= extracted_year <= 2050:
+                     default_month = extracted_month
+                     default_year = extracted_year
+                     st.success(f"🗓️ Detectado: {months[default_month]}/{default_year}")
+                 else:
+                     st.warning(f"⚠️ Data extraída inválida do arquivo. Usando data atual.")
 
         imp_month = st.selectbox("Mês de Referência", list(months.keys()), format_func=lambda x: months[x], index=default_month-1, key="imp_month")
         imp_year = st.selectbox("Ano de Referência", range(2024, 2031), index=default_year-2024, key="imp_year") # Ajuste index conforme range
