@@ -316,37 +316,47 @@ with tab3:
                     if not suggested or suggested == 'Outros':
                         suggested = ml_patterns.suggest_category_from_learned(row['title'], learned_patterns)
                     
-                    # Se sugeriu algo novo e diferente de 'Outros'
-                    if suggested and suggested != row['category'] and suggested != 'Outros':
-                        wiz_suggestions.append({
-                            "id": row['id'],
-                            "Data": row['date'],
-                            "Descrição": row['title'],
-                            "Categoria Atual": row['category'],
-                            "Nova Sugestão": suggested,
-                            "Aplicar?": True
-                        })
+                    # MUDANÇA: Mostra TODAS as transações do escopo, mesmo sem sugestão
+                    # Se não conseguiu sugerir, deixa vazio para edição manual
+                    if not suggested or suggested == row['category']:
+                        suggested = ""  # Vazio = usuário pode escolher manualmente
+                    
+                    wiz_suggestions.append({
+                        "id": row['id'],
+                        "Data": row['date'],
+                        "Descrição": row['title'],
+                        "Categoria Atual": row['category'],
+                        "Nova Categoria": suggested,  # Agora é "Nova Categoria" e editável
+                        "Aplicar?": True if suggested else False  # Desmarca se não tem sugestão
+                    })
                 
                 if wiz_suggestions:
                     st.session_state.wiz_suggestions = pd.DataFrame(wiz_suggestions)
-                    st.success(f"Encontrei {len(wiz_suggestions)} sugestões!")
+                    auto_suggestions = len([s for s in wiz_suggestions if s["Nova Categoria"]])
+                    st.success(f"Mostrando {len(wiz_suggestions)} transações ({auto_suggestions} com sugestão automática).")
                     st.info(f"📚 Aprendi padrões de {len(learned_patterns)} palavras-chave do seu histórico.")
                 else:
-                    st.info("Nenhuma sugestão nova encontrada.")
+                    st.info("Nenhuma transação encontrada no escopo selecionado.")
                     if 'wiz_suggestions' in st.session_state: 
                         del st.session_state.wiz_suggestions
             
             # Mostrar Tabela de Sugestões
             if 'wiz_suggestions' in st.session_state and not st.session_state.wiz_suggestions.empty:
-                st.markdown("### Sugestões Encontradas")
+                st.markdown("### Transações para Categorizar")
+                st.caption("✏️ Você pode editar a 'Nova Categoria' manualmente. Deixe em branco para não alterar.")
                 
                 edited_wiz = st.data_editor(
                     st.session_state.wiz_suggestions,
                     column_config={
                         "id": None, 
+                        "Nova Categoria": st.column_config.SelectboxColumn(
+                            "Nova Categoria",
+                            options=[""] + settings["categories"],  # "" = não alterar
+                            required=False
+                        ),
                         "Aplicar?": st.column_config.CheckboxColumn("Aplicar?", default=True)
                     },
-                    disabled=["Data", "Descrição", "Categoria Atual", "Nova Sugestão"],
+                    disabled=["Data", "Descrição", "Categoria Atual"],  # "Nova Categoria" é EDITÁVEL agora
                     hide_index=True,
                     use_container_width=True,
                     key="wizard_table"
@@ -355,17 +365,19 @@ with tab3:
                 if st.button("✨ Aplicar Selecionados", key="wizard_apply_btn"):
                     count = 0
                     for index, row in edited_wiz.iterrows():
-                        if row["Aplicar?"]:
-                            # CORREÇÃO: Atualiza DataFrame Principal (st.session_state.df) usando ID
+                        if row["Aplicar?"] and row["Nova Categoria"] and row["Nova Categoria"].strip():
+                            # Atualiza somente se tiver uma categoria válida
                             mask = st.session_state.df['id'] == row['id']
-                            st.session_state.df.loc[mask, 'category'] = row['Nova Sugestão']
+                            st.session_state.df.loc[mask, 'category'] = row['Nova Categoria']
                             count += 1
                     
                     if count > 0:
                         utils.save_data(st.session_state.df)
-                        st.success(f"{count} transações categorizadas com sucesso!")
+                        st.success(f"✅ {count} transações categorizadas com sucesso!")
                         del st.session_state.wiz_suggestions
                         st.rerun()
+                    else:
+                        st.warning("Nenhuma transação foi marcada com categoria válida para aplicar.")
     # ------------------------------------
 
     # ------------------------------------
