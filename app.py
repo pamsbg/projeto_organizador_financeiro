@@ -149,27 +149,29 @@ with tab1:
         selected_year_rec = st.selectbox("Ano", options=years, format_func=lambda x: "Todos" if x == 0 else str(x), 
                                          index=years.index(current_year) if current_year in years else 0, key="rec_year")
     
-    income_df = utils.load_income_data()
+    # Carregar todas as receitas do banco
+    full_income_df = utils.load_income_data()
     
-    # Aplicar filtro de mês/ano
-    if not income_df.empty and 'date' in income_df.columns:
-        income_df['date'] = pd.to_datetime(income_df['date'], errors='coerce')
+    # Aplicar filtros APENAS para visualização (não altera o DataFrame original)
+    display_income = full_income_df.copy()
+    
+    if not display_income.empty and 'date' in display_income.columns:
+        display_income['date'] = pd.to_datetime(display_income['date'], errors='coerce')
         
         # Filtrar por mês (0 = Todos)
         if selected_month_rec != 0:
-            income_df = income_df[income_df['date'].dt.month == selected_month_rec]
+            display_income = display_income[display_income['date'].dt.month == selected_month_rec]
         
         # Filtrar por ano (0 = Todos)
         if selected_year_rec != 0:
-            income_df = income_df[income_df['date'].dt.year == selected_year_rec]
+            display_income = display_income[display_income['date'].dt.year == selected_year_rec]
     
-    # Filtro Visual (Se selecionado pessoa específica)
+    # Filtro Visual de Pessoa (Se selecionado pessoa específica)
     if owner_filter != "Todos":
-        if 'owner' not in income_df.columns: income_df['owner'] = "Família"
-        display_income = income_df[income_df['owner'] == owner_filter]
+        if 'owner' not in display_income.columns: display_income['owner'] = "Família"
+        display_income = display_income[display_income['owner'] == owner_filter]
         st.caption(f"Editando receitas de: **{owner_filter}**")
     else:
-        display_income = income_df
         st.caption("Editando **Todas** as receitas")
 
     # Resetar index para evitar colunas estranhas no editor e garantir alinhamento
@@ -189,31 +191,50 @@ with tab1:
             "recurrence": st.column_config.SelectboxColumn("Recorrência", options=["Mensal", "Única", "Anual"]),
             "owner": st.column_config.SelectboxColumn("Pessoa", options=["Pamela", "Renato", "Família"])
         }, 
-        key=f"income_editor_main_{owner_filter}" # Key dinâmica para forçar reset ao mudar filtro
+        key=f"income_editor_main_{owner_filter}_{selected_month_rec}_{selected_year_rec}" # Key dinâmica para forçar reset ao mudar filtros
     )
     
     if st.button("Salvar Receitas"):
-        # Se estava filtrado, precisa garantir integridade
+        # CORREÇÃO: Sempre carregar o DataFrame completo do disco para preservar TODAS as receitas
+        full_income = utils.load_income_data()
+        if 'owner' not in full_income.columns: 
+            full_income['owner'] = "Família"
+        
+        # Determinar quais receitas foram filtradas e não devem ser tocadas
+        # Precisamos identificar quais receitas NÃO estão na visualização atual
+        
+        # 1. Identificar as receitas que NÃO foram exibidas (fora do filtro)
+        # Criar filtro inverso para pegar o que NÃO deve ser alterado
+        full_income['date'] = pd.to_datetime(full_income['date'], errors='coerce')
+        
+        # Máscara para receitas que NÃO devem ser alteradas (fora do filtro atual)
+        mask_keep = pd.Series([True] * len(full_income), index=full_income.index)
+        
+        # Aplicar filtro de mês
+        if selected_month_rec != 0:
+            mask_keep = mask_keep & (full_income['date'].dt.month != selected_month_rec)
+        
+        # Aplicar filtro de ano  
+        if selected_year_rec != 0:
+            mask_keep = mask_keep & (full_income['date'].dt.year != selected_year_rec)
+        
+        # Aplicar filtro de pessoa
         if owner_filter != "Todos":
-             # 1. Carrega o todo atualizado do disco (para não perder nada que outros mexeram)
-             full_income = utils.load_income_data()
-             if 'owner' not in full_income.columns: full_income['owner'] = "Família"
-             
-             # 2. Separa o que NÃO é desse dono (preserva)
-             other_people_income = full_income[full_income['owner'] != owner_filter]
-             
-             # 3. Força a coluna 'owner' nas linhas novas/editadas caso o usuário tenha esquecido
-             edited_income['owner'] = owner_filter 
-             
-             # 4. Junta tudo
-             final_income = pd.concat([other_people_income, edited_income], ignore_index=True)
-             
-             # 5. Salva
-             utils.save_income_data(final_income)
-        else:
-             # Se estava vendo todos, salva direto (o usuário é responsável por preencher o dono na coluna)
-             utils.save_income_data(edited_income)
-             
+            mask_keep = mask_keep | (full_income['owner'] != owner_filter)
+        
+        # 2. Receitas que devem ser preservadas (estão fora do filtro)
+        untouched_income = full_income[mask_keep]
+        
+        # 3. Forçar owner nas receitas editadas se filtro de pessoa estiver ativo
+        if owner_filter != "Todos":
+            edited_income['owner'] = owner_filter
+        
+        # 4. Combinar: receitas não tocadas + receitas editadas
+        final_income = pd.concat([untouched_income, edited_income], ignore_index=True)
+        
+        # 5. Salvar
+        utils.save_income_data(final_income)
+        
         st.success("Receitas atualizadas com sucesso!")
         st.rerun()
 
@@ -501,22 +522,23 @@ with tab3:
     
     # Botão Salvar
     if st.button("💾 Salvar Alterações", key="save_trans_btn"):
-        # CORREÇÃO: Mesclar edited_df de volta no DataFrame completo
-        # Se estamos vendo dados filtrados, precisamos atualizar apenas os registros editados
+        # IMPORTANTE: Este código preserva transações fora do filtro automaticamente
+        # porque usa st.session_state.df (DataFrame completo) e atualiza apenas os IDs editados.
+        # Transações filtradas fora da visualização atual NÃO são afetadas.
         
         # Identificar novos registros (sem ID)
         new_rows = edited_df[edited_df['id'].isna() | (edited_df['id'] == '')]
         
-        # Atualizar registros existentes no df principal
+        # Atualizar registros existentes no df principal (por ID - seguro com filtros)
         for idx, row in edited_df.iterrows():
             if pd.notna(row['id']) and row['id'] != '':
-                # Atualizar registro existente
+                # Atualizar apenas este registro específico no DataFrame completo
                 mask = st.session_state.df['id'] == row['id']
                 if mask.any():
                     for col in edited_df.columns:
                         st.session_state.df.loc[mask, col] = row[col]
         
-        # Adicionar novos registros
+        # Adicionar novos registros ao DataFrame completo
         if not new_rows.empty:
             new_rows = new_rows.copy()
             for idx in new_rows.index:
