@@ -282,6 +282,105 @@ with tab3:
     else:
         display_df = df.copy()
 
+    # --- MÁGICO DE CATEGORIZAÇÃO (IA) ---
+    if not df.empty:
+        import ai_utils # Importação sob demanda
+        
+        with st.expander("🧙‍♂️ Mágico de Categorização (IA Generativa)"):
+            st.write("A Inteligência Artificial (Google Gemini) vai analisar suas transações e sugerir a melhor categoria.")
+            
+            # Verificar API Key
+            api_key = st.secrets.get("gemini_api_key")
+            if not api_key:
+                st.warning("⚠️ API Key do Google Gemini não encontrada em secrets.toml.")
+                st.info("Adicione `gemini_api_key` no arquivo `.streamlit/secrets.toml` para usar essa função.")
+            else:
+                st.caption("✅ IA Conectada e Pronta!")
+                
+                col_wiz1, col_wiz2 = st.columns(2)
+                with col_wiz1:
+                    wiz_target = st.radio("Escopo da Busca:", ["Apenas 'Outros'", "Todas as Categorias"], index=0)
+                
+                if st.button("🧠 Analisar com IA"):
+                    with st.spinner("A IA está pensando... (Isso pode levar alguns segundos)"):
+                        # 1. Identificar transações alvo
+                        target_mask = pd.Series([False] * len(df))
+                        if wiz_target == "Apenas 'Outros'":
+                            target_mask = df['category'].isin(['Outros', '', 'Geral', 'nan'])
+                        else:
+                            target_mask = ~df['category'].isin(['Pagamento/Crédito']) # Ignora pagamentos
+                            
+                        target_df = df[target_mask].copy()
+                        
+                        if target_df.empty:
+                            st.info("Nenhuma transação encontrada no escopo selecionado.")
+                        else:
+                            # 2. Filtrar descrições únicas para economizar tokens/tempo
+                            unique_descriptions = target_df['title'].unique().tolist()
+                            
+                            # 3. Chamar a IA
+                            available_categories = settings["categories"]
+                            ai_mapping = ai_utils.classify_transactions_gemini(unique_descriptions, available_categories, api_key)
+                            
+                            # 4. Montar Sugestões
+                            wiz_suggestions = []
+                            for idx, row in target_df.iterrows():
+                                title = row['title']
+                                current_cat = row['category']
+                                suggested_cat = ai_mapping.get(title)
+                                
+                                # Se a IA sugeriu algo válido e diferente do atual
+                                if suggested_cat and suggested_cat in available_categories and suggested_cat != current_cat:
+                                    wiz_suggestions.append({
+                                        "id": row['id'],
+                                        "Data": row['date'],
+                                        "Descrição": title,
+                                        "Categoria Atual": current_cat,
+                                        "Nova Sugestão": suggested_cat,
+                                        "Aplicar?": True
+                                    })
+                            
+                            if wiz_suggestions:
+                                st.session_state.wiz_suggestions = pd.DataFrame(wiz_suggestions)
+                                st.success(f"A IA encontrou {len(wiz_suggestions)} sugestões!")
+                            else:
+                                st.info("A IA analisou, mas não sugeriu mudanças (ou concordou com as categorias atuais).")
+                                if 'wiz_suggestions' in st.session_state: del st.session_state.wiz_suggestions
+            
+            # Mostrar Tabela de Sugestões
+            if 'wiz_suggestions' in st.session_state and not st.session_state.wiz_suggestions.empty:
+                st.markdown("### Sugestões da IA")
+                st.caption("Revise com cuidado. A IA pode errar.")
+                
+                edited_wiz = st.data_editor(
+                    st.session_state.wiz_suggestions,
+                    column_config={
+                        "id": None, 
+                        "Aplicar?": st.column_config.CheckboxColumn("Aplicar?", default=True)
+                    },
+                    disabled=["Data", "Descrição", "Categoria Atual", "Nova Sugestão"],
+                    hide_index=True,
+                    use_container_width=True,
+                    key="wizard_table_ai"
+                )
+                
+                if st.button("✨ Aplicar Selecionados"):
+                    count = 0
+                    for index, row in edited_wiz.iterrows():
+                        if row["Aplicar?"]:
+                            # Atualiza DataFrame Principal usando ID
+                            mask = df['id'] == row['id']
+                            df.loc[mask, 'category'] = row['Nova Sugestão']
+                            count += 1
+                    
+                    if count > 0:
+                        utils.save_data(df)
+                        st.session_state.df = df # Atualiza Sessão
+                        st.success(f"{count} transações categorizadas com sucesso!")
+                        del st.session_state.wiz_suggestions
+                        st.rerun()
+    # ------------------------------------
+
     # Filtros (Só mostra se tiver dados, mas o editor aparece sempre)
     col_search, col_month, col_year = st.columns([2, 1, 1])
     
@@ -321,15 +420,25 @@ with tab3:
         st.caption("Ordenação Personalizada")
         col_sort1, col_sort2 = st.columns(2)
         with col_sort1:
-            sort_cols = st.multiselect("Ordenar por:", ['date', 'amount', 'category', 'title', 'owner'], default=['date'])
+            # Opções amigáveis para o usuário
+            sort_cols = st.multiselect("Ordenar por:", ['DATA', 'VALOR', 'CATEGORIA', 'DESCRIÇÃO', 'PESSOA'], default=['DATA'])
         with col_sort2:
             sort_order = st.radio("Ordem:", ["Crescente", "Decrescente"], horizontal=True, index=1)
             
         if sort_cols:
             ascending = True if sort_order == "Crescente" else False
-            # Se fosse multi-order (um cresc, outro decresc), seria mais complexo. 
-            # Aqui aplicamos a mesma ordem para todas as colunas selecionadas.
-            display_df = display_df.sort_values(by=sort_cols, ascending=ascending)
+            
+            # Mapeamento de nomes amigáveis para colunas reais
+            col_map = {
+                'DATA': 'date', 
+                'VALOR': 'amount', 
+                'CATEGORIA': 'category', 
+                'DESCRIÇÃO': 'title', 
+                'PESSOA': 'owner'
+            }
+            real_cols = [col_map[c] for c in sort_cols]
+            
+            display_df = display_df.sort_values(by=real_cols, ascending=ascending)
     
     # Resetar index para evitar warnings com hide_index=True e num_rows=dynamic
     display_df = display_df.reset_index(drop=True)
@@ -462,6 +571,19 @@ with tab5:
         })
         
     budget_df = pd.DataFrame(budget_data)
+    
+    # --- NOVO: Adicionar Categoria Diretamente no Planejamento ---
+    with st.expander("➕ Adicionar Nova Categoria de Meta"):
+        new_cat_planning = st.text_input("Nome da Nova Categoria", key="new_cat_planning")
+        if st.button("Criar Categoria"):
+            if new_cat_planning and new_cat_planning not in settings["categories"]:
+                settings["categories"].append(new_cat_planning)
+                utils.save_settings(settings)
+                st.success(f"Categoria '{new_cat_planning}' criada! Agora defina a meta abaixo.")
+                st.rerun()
+            elif new_cat_planning in settings["categories"]:
+                st.warning("Essa categoria já existe.")
+    # -------------------------------------------------------------
     
     # Permitir edição apenas se não for "Todos" (Agregado)
     disable_editing = (owner_filter == "Todos")

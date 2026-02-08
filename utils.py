@@ -14,7 +14,9 @@ DEFAULT_SETTINGS = {
     "categories": [
         "Moradia",
         "Alimentação (Mercado/Sacolão)",
-        "Transporte (Combustível/Manutenção)",
+        "Moradia",
+        "Alimentação (Mercado/Sacolão)",
+        "Transporte (Combustível/Estacionamento/Manutenção)",
         "Transporte (Uber/99)",
         "Saúde/Farmácia",
         "Pessoal/Vestuário",
@@ -211,7 +213,7 @@ def load_income_data():
     """Carrega dados de receitas ou cria vazio."""
     if os.path.exists(INCOME_FILE):
         try:
-            df = pd.read_csv(INCOME_FILE)
+            df = pd.read_csv(INCOME_FILE, encoding='utf-8')
             if 'date' in df.columns:
                 df['date'] = pd.to_datetime(df['date']).dt.date
             
@@ -240,7 +242,7 @@ def load_income_data():
 
 def save_income_data(df):
     """Salva dados de receitas."""
-    df.to_csv(INCOME_FILE, index=False)
+    df.to_csv(INCOME_FILE, index=False, encoding='utf-8')
 
 def categorize_transaction(title):
     """Categoriza a transação com base no título, usando regras refinadas."""
@@ -260,9 +262,9 @@ def categorize_transaction(title):
     if any(x in title_lower for x in ['mercado', 'supermercado', 'assai', 'carrefour', 'pão de açúcar', 'extra', 'chama', 'açougue', 'sacolão', 'hortifruti', 'atacadista', 'hirota', 'aneto']):
         return 'Alimentação (Mercado/Sacolão)'
         
-    # 4. Transporte (Carro / Combustível)
-    if any(x in title_lower for x in ['posto', 'abastece', 'estacionamento', 'sem par', 'veloe', 'w r car', 'ipva', 'seguro auto', 'mecanica', 'auto posto', 'gasolina']):
-        return 'Transporte (Combustível/Manutenção)'
+    # 4. Transporte (Carro / Combustível / Estacionamento)
+    if any(x in title_lower for x in ['posto', 'abastece', 'estacionamento', 'sem par', 'veloe', 'w r car', 'ipva', 'seguro auto', 'mecanica', 'auto posto', 'gasolina', 'park']):
+        return 'Transporte (Combustível/Estacionamento/Manutenção)'
 
     # 5. Transporte (Uber / 99)
     if any(x in title_lower for x in ['uber', '99app', '99*', 'taxi', 'pop']):
