@@ -314,41 +314,6 @@ def extract_installment_info(title):
 import re
 
 def extract_date_from_filename(filename):
-    """Tenta extrair mês e ano do nome do arquivo."""
-    try:
-        filename = filename.lower()
-        today = datetime.now()
-        
-        # 1. Padrão YYYY-MM ou YYYY_MM (ex: 2026-02, 2026_02)
-        # Também cobrir YYYYMMDD (fatura-20260128) -> Extrair 2026-01
-        
-        # YYYYMMDD
-        match_ymd = re.search(r'(\d{4})(\d{2})(\d{2})', filename)
-        if match_ymd:
-             return int(match_ymd.group(2)), int(match_ymd.group(1))
-
-        match_iso = re.search(r'(\d{4})[-_](\d{2})', filename)
-        if match_iso:
-            return int(match_iso.group(2)), int(match_iso.group(1))
-            
-        # 2. Padrão MM-YYYY (ex: 02-2026)
-        match_br = re.search(r'(\d{2})[-_](\d{4})', filename)
-        if match_br:
-            return int(match_br.group(1)), int(match_br.group(2))
-            
-        # 3. Nome do Mês (ex: nubank_fevereiro_2026)
-        months_pt = {
-            'janeiro': 1, 'jan': 1,
-            'fevereiro': 2, 'fev': 2,
-            'março': 3, 'marco': 3, 'mar': 3,
-            'abril': 4, 'abr': 4,
-            'maio': 5, 'mai': 5,
-            'junho': 6, 'jun': 6,
-            'julho': 7, 'jul': 7,
-            'agosto': 8, 'ago': 8,
-            'setembro': 9, 'set': 9,
-            'outubro': 10, 'out': 10,
-            'novembro': 11, 'nov': 11,
     """
     Tenta extrair mês e ano do nome do arquivo.
     Suporta formatos: YYYY-MM, YYYYMM, YYYY-MM-DD, YYYYMMDD
@@ -356,7 +321,7 @@ def extract_date_from_filename(filename):
     """
     import re
     
-    # Padrão 1: YYYY-MM ou YYYY-MM-DD (ex: 2026-02, 2026-02-15)
+    # Padrão 1: YYYY-MM ou YYYY-MM-DD (ex: 2026-02, 2026-02-15, fatura-2026-01)
     match = re.search(r'(\d{4})-(\d{2})(?:-\d{2})?', filename)
     if match:
         year = int(match.group(1))
@@ -364,21 +329,20 @@ def extract_date_from_filename(filename):
         if 1 <= month <= 12 and 2020 <= year <= 2050:
             return month, year
     
-    # Padrão 2: YYYYMMDD (ex: 20260128 -> Jan/2026)
+    # Padrão 2: YYYYMMDD (ex: fatura-20260128 -> Jan/2026)
     match = re.search(r'(\d{4})(\d{2})(\d{2})', filename)
     if match:
         year = int(match.group(1))
         month = int(match.group(2))
-        day = int(match.group(3))  # Ignoramos o dia, mas validamos
+        day = int(match.group(3))
         if 1 <= month <= 12 and 1 <= day <= 31 and 2020 <= year <= 2050:
             return month, year
     
-    # Padrão 3: YYYYMM (ex: 202602)
-    match = re.search(r'(\d{6})', filename)
+    # Padrão 3: YYYY_MM (ex: nubank_2026_02)
+    match = re.search(r'(\d{4})[_](\d{2})', filename)
     if match:
-        year_month = match.group(1)
-        year = int(year_month[:4])
-        month = int(year_month[4:6])
+        year = int(match.group(1))
+        month = int(match.group(2))
         if 1 <= month <= 12 and 2020 <= year <= 2050:
             return month, year
     
