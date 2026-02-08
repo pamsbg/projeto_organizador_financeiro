@@ -8,6 +8,43 @@ import os
 # Configuração da Página
 st.set_page_config(page_title="Organizador Financeiro", layout="wide", page_icon="💰")
 
+# --- LOGIN SYSTEM ---
+def check_password():
+    """Retorna True se o usuário logar corretamente."""
+    if "password_correct" not in st.session_state:
+        st.session_state.password_correct = False
+
+    if st.session_state.password_correct:
+        return True
+
+    st.title("🔒 Acesso Restrito")
+    st.markdown("Este sistema é privado. Por favor, digite a senha de acesso.")
+
+    password = st.text_input("Senha", type="password")
+    
+    if st.button("Entrar"):
+        try:
+            # Tenta pegar a senha dos segredos (Cloud ou Local)
+            correct_password = st.secrets["password"]
+        except (FileNotFoundError, KeyError):
+            # Fallback seguro para erro de configuração
+            st.error("⚠️ Erro de Configuração: Senha não encontrada nos Secrets!")
+            st.info("Para o dono do app: Crie o arquivo `.streamlit/secrets.toml` ou configure no Dashboard do Streamlit.")
+            return False
+
+        if password == correct_password:
+            st.session_state.password_correct = True
+            st.rerun()
+        else:
+            st.error("❌ Senha incorreta.")
+            
+    return False
+
+if not check_password():
+    st.stop() # Para a execução aqui se não estiver logado
+
+# --- FIM DO LOGIN ---
+
 # Título Principal
 st.title("💰 Organizador Financeiro Família Guerra Possa")
 
