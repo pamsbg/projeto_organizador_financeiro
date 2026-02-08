@@ -152,6 +152,15 @@ with tab1:
     # Carregar todas as receitas do banco
     full_income_df = utils.load_income_data()
     
+    # IMPORTANTE: Criar IDs únicos ANTES de qualquer filtro para rastrear deleções
+    # Usa hash do conteúdo para garantir consistência
+    if not full_income_df.empty:
+        full_income_df['_temp_id'] = full_income_df.apply(
+            lambda row: hash((str(row.get('date', '')), str(row.get('source', '')), 
+                            str(row.get('amount', '')), str(row.get('owner', '')))), 
+            axis=1
+        ).astype(str)
+    
     # Aplicar filtros APENAS para visualização (não altera o DataFrame original)
     display_income = full_income_df.copy()
     
@@ -200,11 +209,23 @@ with tab1:
         if 'owner' not in full_income.columns: 
             full_income['owner'] = "Família"
         
-        # Determinar quais receitas foram filtradas e não devem ser tocadas
-        # Precisamos identificar quais receitas NÃO estão na visualização atual
+        # Criar IDs temporários no full_income carregado agora (mesmo método usado acima)
+        if not full_income.empty:
+            full_income['_temp_id'] = full_income.apply(
+                lambda row: hash((str(row.get('date', '')), str(row.get('source', '')), 
+                                str(row.get('amount', '')), str(row.get('owner', '')))), 
+                axis=1
+            ).astype(str)
         
-        # 1. Identificar as receitas que NÃO foram exibidas (fora do filtro)
-        # Criar filtro inverso para pegar o que NÃO deve ser alterado
+        # Adicionar _temp_id ao edited_income se não tiver (novas linhas)
+        if not edited_income.empty and '_temp_id' not in edited_income.columns:
+            edited_income['_temp_id'] = edited_income.apply(
+                lambda row: hash((str(row.get('date', '')), str(row.get('source', '')), 
+                                str(row.get('amount', '')), str(row.get('owner', '')))), 
+                axis=1
+            ).astype(str)
+        
+        # Determinar quais receitas foram filtradas e não devem ser tocadas
         full_income['date'] = pd.to_datetime(full_income['date'], errors='coerce')
         
         # Máscara para receitas que NÃO devem ser alteradas (fora do filtro atual)
@@ -222,43 +243,41 @@ with tab1:
         if owner_filter != "Todos":
             mask_keep = mask_keep | (full_income['owner'] != owner_filter)
         
-        # 2. Receitas que devem ser preservadas (estão fora do filtro)
+        # Receitas que devem ser preservadas (estão fora do filtro)
         untouched_income = full_income[mask_keep]
         
-        # 3. NOVO: Detectar deleções - Se receita estava em display_income mas não está em edited_income
-        # Precisamos adicionar IDs únicos para rastrear deleções
-        if 'id' not in full_income.columns or full_income['id'].isna().any():
-            # Gerar IDs temporários para receitas que não têm (baseado em index)
-            full_income['id'] = full_income.index.astype(str)
-        
-        if 'id' not in display_income.columns:
-            display_income['id'] = display_income.index.astype(str)
+        # Detectar deleções usando _temp_id
+        if '_temp_id' in display_income.columns and not display_income.empty:
+            original_ids_shown = set(display_income['_temp_id'].dropna())
             
-        if 'id' not in edited_income.columns or edited_income.empty:
-            # Se edited_income está vazio ou sem ID, adicionar coluna vazia
-            edited_income['id'] = edited_income.index.astype(str) if not edited_income.empty else []
+            # CORREÇÃO: Verificar se edited_income está vazio ou sem _temp_id
+            if edited_income.empty or '_temp_id' not in edited_income.columns:
+                edited_ids = set()  # Todas as receitas visíveis foram deletadas
+            else:
+                edited_ids = set(edited_income['_temp_id'].dropna())
+            
+            deleted_ids = original_ids_shown - edited_ids
+            
+            # Remover receitas deletadas de untouched_income
+            if deleted_ids and '_temp_id' in untouched_income.columns:
+                untouched_income = untouched_income[~untouched_income['_temp_id'].isin(deleted_ids)]
         
-        # Identificar IDs que foram deletados (estavam em display mas não estão em edited)
-        original_ids_shown = set(display_income['id'].dropna()) if not display_income.empty else set()
-        edited_ids = set(edited_income['id'].dropna()) if not edited_income.empty else set()
-        deleted_ids = original_ids_shown - edited_ids
-        
-        # Remover receitas deletadas de untouched_income também
-        if deleted_ids and 'id' in untouched_income.columns:
-            untouched_income = untouched_income[~untouched_income['id'].isin(deleted_ids)]
-        
-        # 4. Forçar owner nas receitas editadas se filtro de pessoa estiver ativo
+        # Forçar owner nas receitas editadas se filtro de pessoa estiver ativo
         if owner_filter != "Todos" and not edited_income.empty:
             edited_income['owner'] = owner_filter
         
-        # 5. Combinar: receitas não tocadas + receitas editadas
-        final_income = pd.concat([untouched_income, edited_income], ignore_index=True)
+        # Combinar: receitas não tocadas + receitas editadas
+        # Se edited_income estiver vazio, retorna apenas untouched_income
+        if not edited_income.empty:
+            final_income = pd.concat([untouched_income, edited_income], ignore_index=True)
+        else:
+            final_income = untouched_income.copy()
         
-        # 6. Remover coluna 'id' temporária se foi criada aqui
-        if 'id' in final_income.columns:
-            final_income = final_income.drop(columns=['id'])
+        # Remover coluna temporária _temp_id
+        if '_temp_id' in final_income.columns:
+            final_income = final_income.drop(columns=['_temp_id'])
         
-        # 7. Salvar
+        # Salvar
         utils.save_income_data(final_income)
         
         st.success("Receitas atualizadas com sucesso!")
@@ -553,25 +572,35 @@ with tab3:
         # Transações filtradas fora da visualização atual NÃO são afetadas.
         
         # 1. Identificar IDs que foram DELETADOS (existiam em display_df mas não em edited_df)
-        original_ids = set(display_df['id'].dropna())
-        edited_ids = set(edited_df['id'].dropna())
+        original_ids = set(display_df['id'].dropna()) if not display_df.empty and 'id' in display_df.columns else set()
+        
+        # CORREÇÃO: Verificar se edited_df está vazio ou não tem coluna 'id'
+        if edited_df.empty or 'id' not in edited_df.columns:
+            edited_ids = set()  # Todas as linhas foram deletadas
+        else:
+            edited_ids = set(edited_df['id'].dropna())
+        
         deleted_ids = original_ids - edited_ids
         
         # Remover transações deletadas do DataFrame completo
         if deleted_ids:
             st.session_state.df = st.session_state.df[~st.session_state.df['id'].isin(deleted_ids)]
         
-        # 2. Identificar novos registros (sem ID)
-        new_rows = edited_df[edited_df['id'].isna() | (edited_df['id'] == '')]
+        # 2. Identificar novos registros (sem ID) - só se edited_df não estiver vazio
+        if not edited_df.empty:
+            new_rows = edited_df[edited_df['id'].isna() | (edited_df['id'] == '')]
+        else:
+            new_rows = pd.DataFrame()  # DataFrame vazio
         
         # 3. Atualizar registros existentes no df principal (por ID - seguro com filtros)
-        for idx, row in edited_df.iterrows():
-            if pd.notna(row['id']) and row['id'] != '':
-                # Atualizar apenas este registro específico no DataFrame completo
-                mask = st.session_state.df['id'] == row['id']
-                if mask.any():
-                    for col in edited_df.columns:
-                        st.session_state.df.loc[mask, col] = row[col]
+        if not edited_df.empty:
+            for idx, row in edited_df.iterrows():
+                if pd.notna(row['id']) and row['id'] != '':
+                    # Atualizar apenas este registro específico no DataFrame completo
+                    mask = st.session_state.df['id'] == row['id']
+                    if mask.any():
+                        for col in edited_df.columns:
+                            st.session_state.df.loc[mask, col] = row[col]
         
         # 4. Adicionar novos registros ao DataFrame completo
         if not new_rows.empty:
