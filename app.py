@@ -330,6 +330,7 @@ with tab3:
                         "id": row['id'],
                         "Data": row['date'],
                         "Descrição": row['title'],
+                        "Valor": row['amount'],  # NOVO: Mostrar valor
                         "Categoria Atual": row['category'],
                         "Nova Categoria": suggested,  # Agora é "Nova Categoria" e editável
                         "Aplicar?": True if suggested else False  # Desmarca se não tem sugestão
@@ -354,6 +355,10 @@ with tab3:
                     st.session_state.wiz_suggestions,
                     column_config={
                         "id": None, 
+                        "Valor": st.column_config.NumberColumn(
+                            "Valor (R$)",
+                            format="R$ %.2f"
+                        ),
                         "Nova Categoria": st.column_config.SelectboxColumn(
                             "Nova Categoria",
                             options=[""] + settings["categories"],  # "" = não alterar
@@ -361,7 +366,7 @@ with tab3:
                         ),
                         "Aplicar?": st.column_config.CheckboxColumn("Aplicar?", default=True)
                     },
-                    disabled=["Data", "Descrição", "Categoria Atual"],  # "Nova Categoria" é EDITÁVEL agora
+                    disabled=["Data", "Descrição", "Valor", "Categoria Atual"],  # "Nova Categoria" é EDITÁVEL agora
                     hide_index=True,
                     use_container_width=True,
                     key="wizard_table"
