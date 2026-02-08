@@ -456,15 +456,36 @@ with tab3:
             "date": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
             "category": st.column_config.SelectboxColumn("Categoria", options=settings["categories"]),
             "owner": st.column_config.SelectboxColumn("Pessoa", options=["Pamela", "Renato", "Família"])
-        }
+        },
+        key="trans_editor"  # Chave única para evitar conflitos
     )
     
     # Botão Salvar
-    if st.button("💾 Salvar Alterações"):
-        # Em caso de adição manual em lista vazia, o edited_df terá as novas linhas
-        st.session_state.df = edited_df
+    if st.button("💾 Salvar Alterações", key="save_trans_btn"):
+        # CORREÇÃO: Mesclar edited_df de volta no DataFrame completo
+        # Se estamos vendo dados filtrados, precisamos atualizar apenas os registros editados
+        
+        # Identificar novos registros (sem ID)
+        new_rows = edited_df[edited_df['id'].isna() | (edited_df['id'] == '')]
+        
+        # Atualizar registros existentes no df principal
+        for idx, row in edited_df.iterrows():
+            if pd.notna(row['id']) and row['id'] != '':
+                # Atualizar registro existente
+                mask = st.session_state.df['id'] == row['id']
+                if mask.any():
+                    for col in edited_df.columns:
+                        st.session_state.df.loc[mask, col] = row[col]
+        
+        # Adicionar novos registros
+        if not new_rows.empty:
+            new_rows = new_rows.copy()
+            for idx in new_rows.index:
+                new_rows.loc[idx, 'id'] = str(uuid.uuid4())
+            st.session_state.df = pd.concat([st.session_state.df, new_rows], ignore_index=True)
+        
         utils.save_data(st.session_state.df)
-        st.success("Dados salvos com sucesso!")
+        st.success("✅ Dados salvos com sucesso!")
         st.rerun()
 
 
