@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+
+# Data (Protecting Personal Information)
+*.csv
+*.xlsx
+*.json
+*.bak
+
+# Streamlit
+.streamlit/
+
+# Specific Data Folders
+faturas_itau_pamela/
+faturas_nubank_renato/
+
+# Temporary/Debug Scripts
+debug_*.py
+scan_excel.py
+migrate_excel.py
+fix_csv.py
