@@ -144,6 +144,9 @@ with tab1:
         display_income = income_df
         st.caption("Editando **Todas** as receitas")
 
+    # Resetar index para evitar colunas estranhas no editor e garantir alinhamento
+    display_income = display_income.reset_index(drop=True)
+
     # Editor de Receitas
     edited_income = st.data_editor(
         display_income,
@@ -538,14 +541,16 @@ with tab6:
     income_df = utils.load_income_data()
     income_by_month = pd.Series([0.0]*12, index=range(1, 13))
     
+    
+    # Garantir que proj_year esteja definido mesmo se não houver renda cadastrada
+    col_proj_filter, _ = st.columns(2)
+    with col_proj_filter:
+         proj_year = st.number_input("Ano da Projeção", 2024, 2030, datetime.now().year, key="proj_year_input")
+
     if not income_df.empty:
         # Garantir datetime
         if not pd.api.types.is_datetime64_any_dtype(income_df['date']):
             income_df['date'] = pd.to_datetime(income_df['date'])
-            
-        col_proj_filter, _ = st.columns(2)
-        with col_proj_filter:
-             proj_year = st.number_input("Ano da Projeção", 2024, 2030, datetime.now().year, key="proj_year_input")
 
         # Filtrar receitas do ano e DONO
         income_df['year'] = income_df['date'].dt.year
