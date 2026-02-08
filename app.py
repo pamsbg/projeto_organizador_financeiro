@@ -593,9 +593,15 @@ with tab4:
                      top5 = top_places.groupby('clean_title')['amount'].sum().nlargest(5).reset_index()
                      fig_bar_top = px.bar(top5, x='amount', y='clean_title', orientation='h', text_auto='.2s')
                      fig_bar_top.update_layout(yaxis={'categoryorder':'total ascending'})
-                     st.plotly_chart(fig_bar_top, use_container_width=True, key="dash_top5_chart")
+                     st.plotly_chart(fig_bar_top, use_container_width=True, key="dash_bar_top5")
+                else:
+                     st.info("Sem dados.")
             
-            st.subheader("Evolução Diária")
+            # CORREÇÃO: Converter date para datetime ANTES do groupby para evitar erro de tipos mistos
+            if 'date' in expenses_df.columns:
+                expenses_df['date'] = pd.to_datetime(expenses_df['date'], errors='coerce')
+            
+            st.subheader("Evolução de Gastos no Mês")
             if not expenses_df.empty:
                 daily_spend = expenses_df.groupby('date')['amount'].sum().reset_index()
                 fig_bar = px.bar(daily_spend, x='date', y='amount')
