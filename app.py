@@ -28,8 +28,8 @@ def check_password():
             correct_password = st.secrets["password"]
         except (FileNotFoundError, KeyError):
             # Fallback seguro para erro de configuração
-            st.error("⚠️ Erro de Configuração: Senha não encontrada nos Secrets!")
-            st.info("Para o dono do app: Crie o arquivo `.streamlit/secrets.toml` ou configure no Dashboard do Streamlit.")
+            st.error("⚠️ Senha não configurada!")
+            st.code(f"Esperado em secrets.toml: password = '...'", language="toml")
             return False
 
         if password == correct_password:
@@ -139,14 +139,17 @@ with tab1:
     if owner_filter != "Todos":
         if 'owner' not in income_df.columns: income_df['owner'] = "Família"
         display_income = income_df[income_df['owner'] == owner_filter]
+        st.caption(f"Editando receitas de: **{owner_filter}**")
     else:
         display_income = income_df
+        st.caption("Editando **Todas** as receitas")
 
     # Editor de Receitas
     edited_income = st.data_editor(
         display_income,
         num_rows="dynamic",
         use_container_width=True,
+        hide_index=True,  # <--- CORREÇÃO VISUAL: Esconde a coluna de índice sem nome
         column_config={
             "date": st.column_config.DateColumn("Data de Entrada", format="DD/MM/YYYY"),
             "source": st.column_config.TextColumn("Fonte (Ex: Salário, Aluguel)"),
@@ -155,18 +158,29 @@ with tab1:
             "recurrence": st.column_config.SelectboxColumn("Recorrência", options=["Mensal", "Única", "Anual"]),
             "owner": st.column_config.SelectboxColumn("Pessoa", options=["Pamela", "Renato", "Família"])
         }, 
-        key="income_editor_main"
+        key=f"income_editor_main_{owner_filter}" # Key dinâmica para forçar reset ao mudar filtro
     )
     
     if st.button("Salvar Receitas"):
-        # Se estava filtrado, precisa mesclar com os dados originais ocultos
+        # Se estava filtrado, precisa garantir integridade
         if owner_filter != "Todos":
+             # 1. Carrega o todo atualizado do disco (para não perder nada que outros mexeram)
              full_income = utils.load_income_data()
              if 'owner' not in full_income.columns: full_income['owner'] = "Família"
-             other_income = full_income[full_income['owner'] != owner_filter]
-             final_income = pd.concat([other_income, edited_income], ignore_index=True)
+             
+             # 2. Separa o que NÃO é desse dono (preserva)
+             other_people_income = full_income[full_income['owner'] != owner_filter]
+             
+             # 3. Força a coluna 'owner' nas linhas novas/editadas caso o usuário tenha esquecido
+             edited_income['owner'] = owner_filter 
+             
+             # 4. Junta tudo
+             final_income = pd.concat([other_people_income, edited_income], ignore_index=True)
+             
+             # 5. Salva
              utils.save_income_data(final_income)
         else:
+             # Se estava vendo todos, salva direto (o usuário é responsável por preencher o dono na coluna)
              utils.save_income_data(edited_income)
              
         st.success("Receitas atualizadas com sucesso!")
