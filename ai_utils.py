@@ -14,11 +14,11 @@ def classify_transactions_gemini(descriptions, categories, api_key):
     
     
     # Modelo Flash é rápido e barato (ou free tier)
-    # Atualizado para 2.0-flash conforme disponibilidade
+    # Tentando versão Lite para evitar Rate Limit e 404
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash-lite-001')
     except:
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        model = genai.GenerativeModel('gemini-flash-latest')
     
     
     # Prompt Otimizado com Contexto
@@ -29,7 +29,7 @@ def classify_transactions_gemini(descriptions, categories, api_key):
     Categorias Oficiais: {', '.join(categories)}
     
     Regras de Ouro:
-    1. "Nowpark", "Estapar", "Sem Parar" devem ir para Transporte (Combustível/Estacionamento/Manutenção).
+    1. "Nowpark", "Estapar", "Sem Parar", "Park", "Estacionamento" devem ir para Transporte (Combustível/Estacionamento/Manutenção).
     2. Uber, 99, Táxi vão para Transporte (Uber/99).
     3. Ifood, Restaurantes, Bares vão para Lazer/Restaurantes.
     4. Farmácias vão para Saúde/Farmácia.

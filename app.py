@@ -282,75 +282,51 @@ with tab3:
     else:
         display_df = df.copy()
 
-    # --- MÁGICO DE CATEGORIZAÇÃO (IA) ---
+    # --- MÁGICO DE CATEGORIZAÇÃO ---
     if not df.empty:
-        import ai_utils # Importação sob demanda
-        
-        with st.expander("🧙‍♂️ Mágico de Categorização (IA Generativa)"):
-            st.write("A Inteligência Artificial (Google Gemini) vai analisar suas transações e sugerir a melhor categoria.")
+        with st.expander("🧙‍♂️ Mágico de Categorização (Regras Inteligentes)"):
+            st.write("Analisa suas transações e sugere categorias com base em palavras-chave (Nowpark → Transporte, Uber → Transporte, etc).")
             
-            # Verificar API Key
-            api_key = st.secrets.get("gemini_api_key")
-            if not api_key:
-                st.warning("⚠️ API Key do Google Gemini não encontrada em secrets.toml.")
-                st.info("Adicione `gemini_api_key` no arquivo `.streamlit/secrets.toml` para usar essa função.")
-            else:
-                st.caption("✅ IA Conectada e Pronta!")
+            col_wiz1, col_wiz2 = st.columns(2)
+            with col_wiz1:
+                wiz_target = st.radio("Escopo da Busca:", ["Apenas 'Outros'", "Todas as Categorias"], index=0)
+            
+            if st.button("🔍 Buscar Sugestões"):
+                wiz_suggestions = []
+                for idx, row in df.iterrows():
+                    # Pular categorias de sistema/pagamento
+                    if row['category'] in ['Pagamento/Crédito']: 
+                        continue
+                    
+                    # Filtro de escopo
+                    if wiz_target == "Apenas 'Outros'" and row['category'] not in ['Outros', '', 'Geral']: 
+                        continue
+
+                    # Tenta categorizar usando as regras
+                    suggested = utils.categorize_transaction(row['title'])
+                    
+                    # Se sugeriu algo novo e diferente de 'Outros'
+                    if suggested and suggested != row['category'] and suggested != 'Outros':
+                        wiz_suggestions.append({
+                            "id": row['id'],
+                            "Data": row['date'],
+                            "Descrição": row['title'],
+                            "Categoria Atual": row['category'],
+                            "Nova Sugestão": suggested,
+                            "Aplicar?": True
+                        })
                 
-                col_wiz1, col_wiz2 = st.columns(2)
-                with col_wiz1:
-                    wiz_target = st.radio("Escopo da Busca:", ["Apenas 'Outros'", "Todas as Categorias"], index=0)
-                
-                if st.button("🧠 Analisar com IA"):
-                    with st.spinner("A IA está pensando... (Isso pode levar alguns segundos)"):
-                        # 1. Identificar transações alvo
-                        target_mask = pd.Series([False] * len(df))
-                        if wiz_target == "Apenas 'Outros'":
-                            target_mask = df['category'].isin(['Outros', '', 'Geral', 'nan'])
-                        else:
-                            target_mask = ~df['category'].isin(['Pagamento/Crédito']) # Ignora pagamentos
-                            
-                        target_df = df[target_mask].copy()
-                        
-                        if target_df.empty:
-                            st.info("Nenhuma transação encontrada no escopo selecionado.")
-                        else:
-                            # 2. Filtrar descrições únicas para economizar tokens/tempo
-                            unique_descriptions = target_df['title'].unique().tolist()
-                            
-                            # 3. Chamar a IA
-                            available_categories = settings["categories"]
-                            ai_mapping = ai_utils.classify_transactions_gemini(unique_descriptions, available_categories, api_key)
-                            
-                            # 4. Montar Sugestões
-                            wiz_suggestions = []
-                            for idx, row in target_df.iterrows():
-                                title = row['title']
-                                current_cat = row['category']
-                                suggested_cat = ai_mapping.get(title)
-                                
-                                # Se a IA sugeriu algo válido e diferente do atual
-                                if suggested_cat and suggested_cat in available_categories and suggested_cat != current_cat:
-                                    wiz_suggestions.append({
-                                        "id": row['id'],
-                                        "Data": row['date'],
-                                        "Descrição": title,
-                                        "Categoria Atual": current_cat,
-                                        "Nova Sugestão": suggested_cat,
-                                        "Aplicar?": True
-                                    })
-                            
-                            if wiz_suggestions:
-                                st.session_state.wiz_suggestions = pd.DataFrame(wiz_suggestions)
-                                st.success(f"A IA encontrou {len(wiz_suggestions)} sugestões!")
-                            else:
-                                st.info("A IA analisou, mas não sugeriu mudanças (ou concordou com as categorias atuais).")
-                                if 'wiz_suggestions' in st.session_state: del st.session_state.wiz_suggestions
+                if wiz_suggestions:
+                    st.session_state.wiz_suggestions = pd.DataFrame(wiz_suggestions)
+                    st.success(f"Encontrei {len(wiz_suggestions)} sugestões!")
+                else:
+                    st.info("Nenhuma sugestão nova encontrada com as regras atuais.")
+                    if 'wiz_suggestions' in st.session_state: 
+                        del st.session_state.wiz_suggestions
             
             # Mostrar Tabela de Sugestões
             if 'wiz_suggestions' in st.session_state and not st.session_state.wiz_suggestions.empty:
-                st.markdown("### Sugestões da IA")
-                st.caption("Revise com cuidado. A IA pode errar.")
+                st.markdown("### Sugestões Encontradas")
                 
                 edited_wiz = st.data_editor(
                     st.session_state.wiz_suggestions,
@@ -361,7 +337,7 @@ with tab3:
                     disabled=["Data", "Descrição", "Categoria Atual", "Nova Sugestão"],
                     hide_index=True,
                     use_container_width=True,
-                    key="wizard_table_ai"
+                    key="wizard_table"
                 )
                 
                 if st.button("✨ Aplicar Selecionados"):
@@ -450,6 +426,7 @@ with tab3:
         hide_index=True,
         use_container_width=True,
         column_config={
+            "id": None, # Ocultar coluna ID
             "amount": st.column_config.NumberColumn("Valor (R$)", format="R$ %.2f"),
             "date": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
             "category": st.column_config.SelectboxColumn("Categoria", options=settings["categories"]),
