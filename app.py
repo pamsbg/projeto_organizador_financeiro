@@ -379,6 +379,15 @@ with tab3:
         display_df = utils.create_empty_dataframe()
     else:
         display_df = df.copy()
+    
+    # DEBUG: Verificar IDs logo após criar display_df
+    st.write("🔍 **DEBUG - IDs após criar display_df:**")
+    if 'id' in display_df.columns:
+        st.write(f"Coluna 'id' existe: {len(display_df)} linhas")
+        st.write(f"IDs não-nulos: {display_df['id'].notna().sum()}")
+        st.write(f"Primeiros 5 IDs: {list(display_df['id'].head())}")
+    else:
+        st.write("❌ Coluna 'id' NÃO EXISTE em display_df!")
 
     # --- MÁGICO DE CATEGORIZAÇÃO ---
     if not df.empty:
