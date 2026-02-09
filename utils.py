@@ -107,6 +107,9 @@ def save_settings(settings):
     """Salva configurações."""
     with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
         json.dump(settings, f, indent=4, ensure_ascii=False)
+    
+    # Auto-commit em ambiente cloud
+    auto_commit_data("auto: atualização de configurações")
 
 def get_budgets_for_date(settings, target_date, owner=None):
     """Retorna os orçamentos aplicáveis para uma data (Mês/Ano) e Pessoa."""
@@ -284,7 +287,6 @@ def load_income_data():
         df['recurrence'] = df['recurrence'].astype(str)
         df['owner'] = df['owner'].astype(str)
         df['amount'] = df['amount'].astype(float)
-```python
         return df
 
 def save_income_data(df):
