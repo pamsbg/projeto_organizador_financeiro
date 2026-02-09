@@ -205,12 +205,13 @@ with tab1:
     )
     
     if st.button("Salvar Receitas"):
-        # CORREÇÃO: Sempre carregar o DataFrame completo do disco para preservar TODAS as receitas
+        # REFATORAÇÃO: Usar mesmo padrão de Transações (consistência!)
+        # 1. Carregar DataFrame completo do disco
         full_income = utils.load_income_data()
         if 'owner' not in full_income.columns: 
             full_income['owner'] = "Família"
         
-        # Criar IDs temporários no full_income carregado agora (mesmo método usado acima)
+        # 2. Criar _temp_id no full_income (source of truth)
         if not full_income.empty:
             full_income['_temp_id'] = full_income.apply(
                 lambda row: hash((str(row.get('date', '')), str(row.get('source', '')), 
@@ -218,72 +219,73 @@ with tab1:
                 axis=1
             ).astype(str)
         
-        # Adicionar _temp_id ao edited_income se não tiver (novas linhas)
-        if not edited_income.empty and '_temp_id' not in edited_income.columns:
-            edited_income['_temp_id'] = edited_income.apply(
-                lambda row: hash((str(row.get('date', '')), str(row.get('source', '')), 
-                                str(row.get('amount', '')), str(row.get('owner', '')))), 
-                axis=1
-            ).astype(str)
-        
-        # Determinar quais receitas foram filtradas e não devem ser tocadas
+        # 3. Aplicar filtros para determinar quais NÃO tocar
         full_income['date'] = pd.to_datetime(full_income['date'], errors='coerce')
         
-        # Máscara para receitas que NÃO devem ser alteradas (fora do filtro atual)
+        # Máscara para receitas fora do filtro = preservar
         mask_keep = pd.Series([True] * len(full_income), index=full_income.index)
         
-        # Aplicar filtro de mês
         if selected_month_rec != 0:
             mask_keep = mask_keep & (full_income['date'].dt.month != selected_month_rec)
         
-        # Aplicar filtro de ano  
         if selected_year_rec != 0:
             mask_keep = mask_keep & (full_income['date'].dt.year != selected_year_rec)
         
-        # Aplicar filtro de pessoa
         if owner_filter != "Todos":
             mask_keep = mask_keep | (full_income['owner'] != owner_filter)
         
-        # Receitas que devem ser preservadas (estão fora do filtro)
-        untouched_income = full_income[mask_keep]
+        untouched_income = full_income[mask_keep].copy()
         
-        # Detectar deleções usando _temp_id
+        # 4. Detectar deleções comparando hashes
         if '_temp_id' in display_income.columns and not display_income.empty:
             original_ids_shown = set(display_income['_temp_id'].dropna())
             
-            # CORREÇÃO: Verificar se edited_income está vazio ou sem _temp_id
             if edited_income.empty:
-                edited_ids = set()  # Todas as receitas visíveis foram deletadas
+                edited_ids = set()  # Todas deletadas
             elif '_temp_id' in edited_income.columns:
                 edited_ids = set(edited_income['_temp_id'].dropna())
             else:
-                # Se não tem _temp_id, precisa recalcular para novas linhas
-                edited_ids = set()
+                edited_ids = set()  # Sem hash = assume novas
             
             deleted_ids = original_ids_shown - edited_ids
             
-            # Remover receitas deletadas de untouched_income
+            # Remover deletadas de untouched
             if deleted_ids and '_temp_id' in untouched_income.columns:
                 untouched_income = untouched_income[~untouched_income['_temp_id'].isin(deleted_ids)]
         
-        # REMOVIDO: Não forçar owner ou data - usuário deve ter controle total
-        # A data inserida pelo usuário deve ser respeitada independente do filtro de mês ativo
-        
-        # Combinar: receitas não tocadas + receitas editadas
-        # Se edited_income estiver vazio, retorna apenas untouched_income
+        # 5. Processar edited_income: separar editadas vs novas
         if not edited_income.empty:
-            final_income = pd.concat([untouched_income, edited_income], ignore_index=True)
+            # Com _temp_id = editadas, sem _temp_id = novas
+            if '_temp_id' in edited_income.columns:
+                edited_existing = edited_income[edited_income['_temp_id'].notna()].copy()
+                new_rows = edited_income[edited_income['_temp_id'].isna()].copy()
+            else:
+                # Sem coluna hash = todas são novas
+                edited_existing = pd.DataFrame()
+                new_rows = edited_income.copy()
+            
+            # Limpar _temp_id das editadas
+            if not edited_existing.empty and '_temp_id' in edited_existing.columns:
+                edited_existing = edited_existing.drop(columns=['_temp_id'])
+            
+            # Limpar _temp_id das novas (se houver)
+            if not new_rows.empty and '_temp_id' in new_rows.columns:
+                new_rows = new_rows.drop(columns=['_temp_id'])
+            
+            # Combinar: untouched + editadas + novas
+            final_income = pd.concat([untouched_income, edited_existing, new_rows], ignore_index=True)
         else:
+            # Vazio = só manter untouched
             final_income = untouched_income.copy()
         
-        # Remover coluna temporária _temp_id
+        # 6. Limpar _temp_id antes de salvar
         if '_temp_id' in final_income.columns:
             final_income = final_income.drop(columns=['_temp_id'])
         
-        # Salvar
+        # 7. Salvar
         utils.save_income_data(final_income)
         
-        st.success("Receitas atualizadas com sucesso!")
+        st.success("✅ Receitas atualizadas com sucesso!")
         st.rerun()
 
 # --- ABA 2: IMPORTAR ---
