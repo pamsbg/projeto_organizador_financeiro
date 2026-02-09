@@ -379,13 +379,6 @@ with tab3:
         display_df = utils.create_empty_dataframe()
     else:
         display_df = df.copy()
-        
-        # SOLUÇÃO DEFINITIVA: Criar hash único para cada linha ANTES de filtros
-        # Isso permite rastrear deleções mesmo quando 'id' não está disponível
-        if not display_df.empty and 'id' in display_df.columns:
-            display_df['_row_hash'] = display_df['id'].astype(str)
-        else:
-            display_df['_row_hash'] = display_df.index.astype(str)
 
     # --- MÁGICO DE CATEGORIZAÇÃO ---
     if not df.empty:
@@ -552,6 +545,14 @@ with tab3:
             real_cols = [col_map[c] for c in sort_cols]
             
             display_df = display_df.sort_values(by=real_cols, ascending=ascending)
+    
+    # SOLUÇÃO DEFINITIVA: Criar hash único APÓS TODOS OS FILTROS
+    # Isso garante que rastreamos corretamento os IDs das linhas filtradas
+    if not display_df.empty and 'id' in display_df.columns:
+        display_df['_row_hash'] = display_df['id'].astype(str)
+    elif not display_df.empty:
+        # Fallback: usar índice se não houver ID
+        display_df['_row_hash'] = display_df.index.astype(str)
     
     # Resetar index para evitar warnings com hide_index=True e num_rows=dynamic
     display_df = display_df.reset_index(drop=True)
