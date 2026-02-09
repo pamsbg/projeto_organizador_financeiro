@@ -223,14 +223,24 @@ with tab1:
         full_income['date'] = pd.to_datetime(full_income['date'], errors='coerce')
         
         # Máscara para receitas fora do filtro = preservar
-        mask_keep = pd.Series([True] * len(full_income), index=full_income.index)
+        # LÓGICA CORRETA: Preservar SE está fora de QUALQUER filtro (OR logic)
+        # - Mês diferente OR Ano diferente OR Pessoa diferente
         
+        # Inicializar com False (nada preservado por padrão)
+        mask_keep = pd.Series([False] * len(full_income), index=full_income.index)
+        
+        # Preservar se está em mês diferente
         if selected_month_rec != 0:
-            mask_keep = mask_keep & (full_income['date'].dt.month != selected_month_rec)
+            mask_keep = mask_keep | (full_income['date'].dt.month != selected_month_rec)
+        else:
+            # Se "Todos" os meses, não filtrar por mês (manter False para permitir outros filtros)
+            pass
         
+        # Preservar se está em ano diferente
         if selected_year_rec != 0:
-            mask_keep = mask_keep & (full_income['date'].dt.year != selected_year_rec)
+            mask_keep = mask_keep | (full_income['date'].dt.year != selected_year_rec)
         
+        # Preservar se pertence a pessoa diferente
         if owner_filter != "Todos":
             mask_keep = mask_keep | (full_income['owner'] != owner_filter)
         
