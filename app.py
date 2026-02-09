@@ -379,15 +379,13 @@ with tab3:
         display_df = utils.create_empty_dataframe()
     else:
         display_df = df.copy()
-    
-    # DEBUG: Verificar IDs logo após criar display_df
-    st.write("🔍 **DEBUG - IDs após criar display_df:**")
-    if 'id' in display_df.columns:
-        st.write(f"Coluna 'id' existe: {len(display_df)} linhas")
-        st.write(f"IDs não-nulos: {display_df['id'].notna().sum()}")
-        st.write(f"Primeiros 5 IDs: {list(display_df['id'].head())}")
-    else:
-        st.write("❌ Coluna 'id' NÃO EXISTE em display_df!")
+        
+        # SOLUÇÃO DEFINITIVA: Criar hash único para cada linha ANTES de filtros
+        # Isso permite rastrear deleções mesmo quando 'id' não está disponível
+        if not display_df.empty and 'id' in display_df.columns:
+            display_df['_row_hash'] = display_df['id'].astype(str)
+        else:
+            display_df['_row_hash'] = display_df.index.astype(str)
 
     # --- MÁGICO DE CATEGORIZAÇÃO ---
     if not df.empty:
@@ -558,9 +556,9 @@ with tab3:
     # Resetar index para evitar warnings com hide_index=True e num_rows=dynamic
     display_df = display_df.reset_index(drop=True)
     
-    # CRÍTICO: Salvar os IDs ANTES de enviar para o editor
-    # porque st.data_editor com column_config "id": None pode não retornar a coluna
-    original_display_ids = set(display_df['id'].dropna()) if 'id' in display_df.columns else set()
+    # CRÍTICO: Salvar os hashes ANTES de enviar para o editor
+    original_hashes = set(display_df['_row_hash'].dropna()) if '_row_hash' in display_df.columns else set()
+    hash_to_id = dict(zip(display_df['_row_hash'], display_df['id'])) if '_row_hash' in display_df.columns and 'id' in display_df.columns else {}
             
     # Editor de Dados (Sempre visível para adição)
     edited_df = st.data_editor(
@@ -570,6 +568,7 @@ with tab3:
         use_container_width=True,
         column_config={
             "id": None, # Ocultar coluna ID
+            "_row_hash": None,  # Ocultar coluna hash
             "amount": st.column_config.NumberColumn("Valor (R$)", format="R$ %.2f"),
             "date": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
             "category": st.column_config.SelectboxColumn("Categoria", options=settings["categories"]),
@@ -580,94 +579,59 @@ with tab3:
     
     # Botão Salvar
     if st.button("💾 Salvar Alterações", key="save_trans_btn"):
-        # IMPORTANTE: Este código preserva transações fora do filtro automaticamente
-        # porque usa st.session_state.df (DataFrame completo) e atualiza apenas os IDs editados.
-        # Transações filtradas fora da visualização atual NÃO são afetadas.
+        # Reconstruir hashes usando índices (as linhas mantêm ordem)
+        hash_by_index = dict(enumerate(display_df['_row_hash'])) if '_row_hash' in display_df.columns else {}
         
-        # DEBUG: Mostrar informações
-        st.write("🔍 **DEBUG - Informações de Salvamento:**")
-        st.write(f"Total de transações no banco ANTES: {len(st.session_state.df)}")
-        st.write(f"Transações visíveis no filtro (display_df): {len(display_df)}")
-        st.write(f"Transações no editor após edição (edited_df): {len(edited_df)}")
-        
-        # 1. Identificar IDs que foram DELETADOS
-        # CORREÇÃO: Usar os IDs salvos ANTES do editor
-        # porque edited_df pode não ter a coluna 'id' (foi ocultada no editor)
-        
-        # Para edited_df, precisamos reconstruir os IDs olhando para display_df
-        # Criar um mapeamento index -> id usando display_df original
-        if not display_df.empty and 'id' in display_df.columns:
-            id_by_index = dict(enumerate(display_df['id']))
-        else:
-            id_by_index = {}
-        
-        # IDs que ainda existem = índices de edited_df mapeados para IDs
-        edited_ids = set()
+        # IDs que ainda existem = índices de edited_df mapeados para hashes
+        edited_hashes = set()
         if not edited_df.empty:
             for idx in edited_df.index:
-                if idx in id_by_index:
-                    edited_ids.add(id_by_index[idx])
+                if idx in hash_by_index:
+                    edited_hashes.add(hash_by_index[idx])
         
-        # DEBUG EXTRA: Mostrar IDs
-        st.write(f"📋 Total de IDs originais (salvos antes do editor): {len(original_display_ids)}")
-        st.write(f"📋 Total de IDs editados (reconstruídos): {len(edited_ids)}")
-        st.write(f"📋 Primeiros 10 IDs originais: {list(original_display_ids)[:10]}")
-        st.write(f"📋 Primeiros 10 IDs editados: {list(edited_ids)[:10]}")
-        
-        deleted_ids = original_display_ids - edited_ids
-        
-        st.write(f"❌ IDs que serão DELETADOS: {len(deleted_ids)}")
-        if deleted_ids:
-            st.write(f"IDs deletados: {list(deleted_ids)[:5]}...")  # Mostra os primeiros 5
+        # Detectar deleções
+        deleted_hashes = original_hashes - edited_hashes
+        deleted_ids = set(hash_to_id[h] for h in deleted_hashes if h in hash_to_id)
         
         # Remover transações deletadas do DataFrame completo
         if deleted_ids:
             st.session_state.df = st.session_state.df[~st.session_state.df['id'].isin(deleted_ids)]
-            st.write(f"Total de transações APÓS deleção: {len(st.session_state.df)}")
         
-        # 2. Identificar novos registros (linhas que não existiam em display_df)
+        # Identificar novos registros (linhas que não existiam em display_df)
         if not edited_df.empty:
-            # Novas linhas são aquelas cujo index está fora do range original
             max_original_index = len(display_df) - 1 if not display_df.empty else -1
             new_row_indices = [idx for idx in edited_df.index if idx > max_original_index]
             new_rows = edited_df.loc[new_row_indices] if new_row_indices else pd.DataFrame()
         else:
             new_rows = pd.DataFrame()
         
-        st.write(f"➕ Novas transações a adicionar: {len(new_rows)}")
-        
-        # 3. Atualizar registros existentes no df principal (por ID - seguro com filtros)
-        updates_count = 0
+        # Atualizar registros existentes no df principal
         if not edited_df.empty:
             for idx, row in edited_df.iterrows():
-                # Pegar o ID original deste índice
-                if idx in id_by_index:
-                    row_id = id_by_index[idx]
-                    # Atualizar apenas este registro específico no DataFrame completo
-                    mask = st.session_state.df['id'] == row_id
-                    if mask.any():
-                        # Copiar todas as colunas EXCETO id
-                        for col in edited_df.columns:
-                            if col != 'id':  # Não sobrescrever ID
-                                st.session_state.df.loc[mask, col] = row[col]
-                        updates_count += 1
+                # Pegar o hash/ID original deste índice
+                if idx in hash_by_index:
+                    row_hash = hash_by_index[idx]
+                    if row_hash in hash_to_id:
+                        row_id = hash_to_id[row_hash]
+                        # Atualizar apenas este registro específico no DataFrame completo
+                        mask = st.session_state.df['id'] == row_id
+                        if mask.any():
+                            # Copiar todas as colunas EXCETO id e _row_hash
+                            for col in edited_df.columns:
+                                if col not in ['id', '_row_hash']:
+                                    st.session_state.df.loc[mask, col] = row[col]
         
-        st.write(f"✏️ Transações atualizadas: {updates_count}")
-        
-        # 4. Adicionar novos registros ao DataFrame completo
+        # Adicionar novos registros ao DataFrame completo
         if not new_rows.empty:
             new_rows = new_rows.copy()
-            # Gerar IDs para novos registros
+            # Gerar IDs para novos registros e remover _row_hash
             new_rows['id'] = [str(uuid.uuid4()) for _ in range(len(new_rows))]
+            if '_row_hash' in new_rows.columns:
+                new_rows = new_rows.drop(columns=['_row_hash'])
             st.session_state.df = pd.concat([st.session_state.df, new_rows], ignore_index=True)
         
         utils.save_data(st.session_state.df)
-        st.write(f"💾 Total de transações FINAL salvo no arquivo: {len(st.session_state.df)}")
         st.success("✅ Dados salvos com sucesso!")
-        
-        # Aguardar 5 segundos antes de recarregar para o usuário ver o debug
-        import time
-        time.sleep(5)
         st.rerun()
 
 
