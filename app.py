@@ -729,37 +729,140 @@ with tab4:
             kpi2.metric("Maior Categoria", maior_categoria)
             kpi3.metric("Quantidade de Compras", qtde_compras)
             
-            row1_col1, row1_col2 = st.columns(2)
+            # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            # SEÇÃO 1: ANÁLISE POR CATEGORIA
+            # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            st.divider()
+            st.subheader("📊 Análise por Categoria")
+            
+            row1_col1, row1_col2 = st.columns([4, 6])
+            
             with row1_col1:
-                st.subheader("Gastos por Categoria")
+                st.markdown("**Distribuição de Gastos**")
                 if not expenses_df.empty:
-                    fig_pie = px.pie(expenses_df, names='category', values='amount', hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
+                    fig_pie = px.pie(
+                        expenses_df, 
+                        names='category', 
+                        values='amount', 
+                        hole=0.4, 
+                        color_discrete_sequence=px.colors.qualitative.Pastel
+                    )
+                    fig_pie.update_traces(textposition='inside', textinfo='percent+label')
                     st.plotly_chart(fig_pie, use_container_width=True, key="dash_pie_chart")
                 else:
                     st.info("Sem gastos.")
             
             with row1_col2:
-                st.subheader("Top 5 Locais")
+                st.markdown("**Detalhamento por Categoria**")
                 if not expenses_df.empty:
-                     top_places = expenses_df.copy()
-                     top_places['clean_title'] = top_places['title'].str.replace(r'(Pg \*|Mp \*|Dl\*)', '', regex=True).str.strip()
-                     top_places['clean_title'] = top_places['clean_title'].apply(lambda x: x.split('-')[0].strip())
-                     top5 = top_places.groupby('clean_title')['amount'].sum().nlargest(5).reset_index()
-                     fig_bar_top = px.bar(top5, x='amount', y='clean_title', orientation='h', text_auto='.2s')
-                     fig_bar_top.update_layout(yaxis={'categoryorder':'total ascending'})
-                     st.plotly_chart(fig_bar_top, use_container_width=True, key="dash_bar_top5")
+                    # Criar tabela resumo de categorias
+                    category_summary = expenses_df.groupby('category').agg({
+                        'amount': ['sum', 'count', 'mean']
+                    }).reset_index()
+                    
+                    category_summary.columns = ['Categoria', 'Total', 'Qtd', 'Média']
+                    category_summary['% do Total'] = (category_summary['Total'] / total_gastos * 100).round(1)
+                    
+                    # Ordenar por total decrescente
+                    category_summary = category_summary.sort_values('Total', ascending=False)
+                    
+                    # Resetar índice para mostrar ranking
+                    category_summary = category_summary.reset_index(drop=True)
+                    category_summary.index = category_summary.index + 1  # Começar do 1
+                    
+                    # Exibir tabela formatada
+                    st.dataframe(
+                        category_summary,
+                        column_config={
+                            "Categoria": st.column_config.TextColumn("Categoria", width="medium"),
+                            "Total": st.column_config.NumberColumn(
+                                "Total Gasto",
+                                format="R$ %.2f"
+                            ),
+                            "Qtd": st.column_config.NumberColumn(
+                                "Nº Compras",
+                                format="%d"
+                            ),
+                            "Média": st.column_config.NumberColumn(
+                                "Valor Médio",
+                                format="R$ %.2f"
+                            ),
+                            "% do Total": st.column_config.NumberColumn(
+                                "% do Total",
+                                format="%.1f%%"
+                            )
+                        },
+                        use_container_width=True,
+                        height=300  # Altura fixa para melhor visualização
+                    )
+                    
+                    # Adicionar resumo rápido abaixo da tabela
+                    num_categories = len(category_summary)
+                    st.caption(f"💡 **{num_categories} categorias** com gastos neste período")
                 else:
-                     st.info("Sem dados.")
+                    st.info("Sem dados para exibir.")
             
-            # CORREÇÃO: Converter date para datetime ANTES do groupby para evitar erro de tipos mistos
-            if 'date' in expenses_df.columns:
-                expenses_df['date'] = pd.to_datetime(expenses_df['date'], errors='coerce')
+            # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            # SEÇÃO 2: ANÁLISE POR LOCAL
+            # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            st.divider()
+            st.subheader("🏪 Top 5 Locais de Maior Gasto")
             
-            st.subheader("Evolução de Gastos no Mês")
             if not expenses_df.empty:
+                top_places = expenses_df.copy()
+                top_places['clean_title'] = top_places['title'].str.replace(r'(Pg \*|Mp \*|Dl\*)', '', regex=True).str.strip()
+                top_places['clean_title'] = top_places['clean_title'].apply(lambda x: x.split('-')[0].strip())
+                top5 = top_places.groupby('clean_title')['amount'].sum().nlargest(5).reset_index()
+                
+                fig_bar_top = px.bar(
+                    top5, 
+                    x='amount', 
+                    y='clean_title', 
+                    orientation='h',
+                    text_auto='.2s',
+                    color='amount',
+                    color_continuous_scale='Reds'
+                )
+                fig_bar_top.update_layout(
+                    yaxis={'categoryorder':'total ascending'},
+                    xaxis_title="Total Gasto (R$)",
+                    yaxis_title="",
+                    showlegend=False,
+                    height=300
+                )
+                fig_bar_top.update_traces(texttemplate='R$ %{x:,.2f}', textposition='outside')
+                st.plotly_chart(fig_bar_top, use_container_width=True, key="dash_bar_top5")
+            else:
+                st.info("Sem dados.")
+            
+            # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            # SEÇÃO 3: EVOLUÇÃO TEMPORAL
+            # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            st.divider()
+            st.subheader("📈 Evolução de Gastos no Mês")
+            
+            # CORREÇÃO: Converter date para datetime ANTES do groupby
+            if not expenses_df.empty:
+                if 'date' in expenses_df.columns:
+                    expenses_df['date'] = pd.to_datetime(expenses_df['date'], errors='coerce')
+                
                 daily_spend = expenses_df.groupby('date')['amount'].sum().reset_index()
-                fig_bar = px.bar(daily_spend, x='date', y='amount')
-                st.plotly_chart(fig_bar, use_container_width=True, key="dash_daily_chart")
+                
+                fig_timeline = px.bar(
+                    daily_spend, 
+                    x='date', 
+                    y='amount',
+                    color='amount',
+                    color_continuous_scale='Blues'
+                )
+                fig_timeline.update_layout(
+                    xaxis_title="Data",
+                    yaxis_title="Gasto Total (R$)",
+                    showlegend=False,
+                    height=350
+                )
+                fig_timeline.update_traces(texttemplate='R$ %{y:,.0f}', textposition='outside')
+                st.plotly_chart(fig_timeline, use_container_width=True, key="dash_daily_chart")
         else:
             st.warning("Nenhum dado encontrado para o período/pessoa selecionados.")
     else:
