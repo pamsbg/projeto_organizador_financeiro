@@ -388,6 +388,7 @@ with tab3:
             st.write("Analisa suas transações usando:")
             st.markdown("- **Regras fixas** (Nowpark → Transporte, Uber → Transporte, etc)")
             st.markdown("- **Padrões aprendidos** das suas categorizações manuais anteriores")
+            st.info("💡 **Como funciona:** O Mágico **salva automaticamente** ao clicar em 'Aplicar'. Transações categorizadas desaparecem da lista porque mudaram de categoria (isso é normal!).")
             
             col_wiz1, col_wiz2 = st.columns(2)
             with col_wiz1:
@@ -478,7 +479,8 @@ with tab3:
                     
                     if count > 0:
                         utils.save_data(st.session_state.df)
-                        st.success(f"✅ {count} transações categorizadas com sucesso!")
+                        st.success(f"✅ {count} transações categorizadas e **salvas automaticamente**!")
+                        st.info("💡 **Transações categorizadas desaparecem da lista** porque mudaram de categoria. Isso é normal! Veja-as na aba 'Transações' ou clique em 'Buscar Sugestões' novamente.")
                         del st.session_state.wiz_suggestions
                         st.rerun()
                     else:
