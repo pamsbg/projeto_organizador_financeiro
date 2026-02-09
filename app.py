@@ -191,8 +191,9 @@ with tab1:
         display_income,
         num_rows="dynamic",
         use_container_width=True,
-        hide_index=True,  # <--- CORREÇÃO VISUAL: Esconde a coluna de índice sem nome
+        hide_index=True,
         column_config={
+            "_temp_id": None,  # CRÍTICO: Ocultar ID temporário do usuário
             "date": st.column_config.DateColumn("Data de Entrada", format="DD/MM/YYYY"),
             "source": st.column_config.TextColumn("Fonte (Ex: Salário, Aluguel)"),
             "amount": st.column_config.NumberColumn("Valor (R$)", format="R$ %.2f"),
@@ -251,10 +252,13 @@ with tab1:
             original_ids_shown = set(display_income['_temp_id'].dropna())
             
             # CORREÇÃO: Verificar se edited_income está vazio ou sem _temp_id
-            if edited_income.empty or '_temp_id' not in edited_income.columns:
+            if edited_income.empty:
                 edited_ids = set()  # Todas as receitas visíveis foram deletadas
-            else:
+            elif '_temp_id' in edited_income.columns:
                 edited_ids = set(edited_income['_temp_id'].dropna())
+            else:
+                # Se não tem _temp_id, precisa recalcular para novas linhas
+                edited_ids = set()
             
             deleted_ids = original_ids_shown - edited_ids
             
@@ -262,9 +266,8 @@ with tab1:
             if deleted_ids and '_temp_id' in untouched_income.columns:
                 untouched_income = untouched_income[~untouched_income['_temp_id'].isin(deleted_ids)]
         
-        # Forçar owner nas receitas editadas se filtro de pessoa estiver ativo
-        if owner_filter != "Todos" and not edited_income.empty:
-            edited_income['owner'] = owner_filter
+        # REMOVIDO: Não forçar owner ou data - usuário deve ter controle total
+        # A data inserida pelo usuário deve ser respeitada independente do filtro de mês ativo
         
         # Combinar: receitas não tocadas + receitas editadas
         # Se edited_income estiver vazio, retorna apenas untouched_income
@@ -632,6 +635,11 @@ with tab3:
             if '_row_hash' in new_rows.columns:
                 new_rows = new_rows.drop(columns=['_row_hash'])
             st.session_state.df = pd.concat([st.session_state.df, new_rows], ignore_index=True)
+        
+        # CRÍTICO: Remover _row_hash do DataFrame completo antes de salvar
+        # Esta coluna é apenas auxiliar e NÃO deve ser persistida
+        if '_row_hash' in st.session_state.df.columns:
+            st.session_state.df = st.session_state.df.drop(columns=['_row_hash'])
         
         utils.save_data(st.session_state.df)
         st.success("✅ Dados salvos com sucesso!")
