@@ -523,9 +523,6 @@ with tab3:
             
         if selected_year_trans != 0:
             display_df = display_df[display_df['date'].dt.year == selected_year_trans]
-            
-        if selected_year_trans != 0:
-            display_df = display_df[display_df['date'].dt.year == selected_year_trans]
         
         # Ordenação Multi-Coluna (Solicitação do Usuário)
         st.caption("Ordenação Personalizada")
@@ -585,63 +582,90 @@ with tab3:
     
     # Botão Salvar
     if st.button("💾 Salvar Alterações", key="save_trans_btn"):
-        # Reconstruir hashes usando índices (as linhas mantêm ordem)
-        hash_by_index = dict(enumerate(display_df['_row_hash'])) if '_row_hash' in display_df.columns else {}
+        # REFATORAÇÃO: Usar mesmo padrão de Receitas que funciona bem
+        # 1. Carregar DataFrame completo do disco
+        full_df = utils.load_data()
         
-        # IDs que ainda existem = índices de edited_df mapeados para hashes
-        edited_hashes = set()
+        # 2. Criar _row_hash no full_df (mesmo método usado em display_df)
+        if not full_df.empty and 'id' in full_df.columns:
+            full_df['_row_hash'] = full_df['id'].astype(str)
+        
+        # 3. Aplicar os MESMOS filtros que foram aplicados em display_df
+        # para determinar quais transações NÃO devem ser tocadas
+        full_df['date'] = pd.to_datetime(full_df['date'], errors='coerce')
+        
+        # Máscara para transações que NÃO devem ser alteradas (fora do filtro atual)
+        mask_keep = pd.Series([True] * len(full_df), index=full_df.index)
+        
+        # Inverter lógica dos filtros: marcar como "keep" o que NÃO está no filtro
+        if search_term:
+            mask_keep = mask_keep & ~(full_df['title'].str.contains(search_term, case=False, na=False))
+        
+        if selected_month_trans != 0:
+            mask_keep = mask_keep & (full_df['date'].dt.month != selected_month_trans)
+        
+        if selected_year_trans != 0:
+            mask_keep = mask_keep & (full_df['date'].dt.year != selected_year_trans)
+        
+        # Aplicar filtro de pessoa (owner_filter vem do filtro global)
+        if owner_filter != "Todos" and 'owner' in full_df.columns:
+            mask_keep = mask_keep | (full_df['owner'] != owner_filter)
+        
+        # Transações fora do filtro = preservar
+        untouched_trans = full_df[mask_keep].copy()
+        
+        # 4. Detectar deleções comparando hashes
+        if '_row_hash' in display_df.columns and not display_df.empty:
+            original_ids_shown = set(display_df['_row_hash'].dropna())
+            
+            if edited_df.empty:
+                edited_ids = set()  # Todas deletadas
+            elif '_row_hash' in edited_df.columns:
+                edited_ids = set(edited_df['_row_hash'].dropna())
+            else:
+                # Fallback: sem hash = assume que são todas novas
+                edited_ids = set()
+            
+            deleted_hashes = original_ids_shown - edited_ids
+            
+            # Remover deletadas de untouched_trans
+            if deleted_hashes and '_row_hash' in untouched_trans.columns:
+                untouched_trans = untouched_trans[~untouched_trans['_row_hash'].isin(deleted_hashes)]
+        
+        # 5. Processar edited_df: separar novas vs editadas
         if not edited_df.empty:
-            for idx in edited_df.index:
-                if idx in hash_by_index:
-                    edited_hashes.add(hash_by_index[idx])
-        
-        # Detectar deleções
-        deleted_hashes = original_hashes - edited_hashes
-        deleted_ids = set(hash_to_id[h] for h in deleted_hashes if h in hash_to_id)
-        
-        # Remover transações deletadas do DataFrame completo
-        if deleted_ids:
-            st.session_state.df = st.session_state.df[~st.session_state.df['id'].isin(deleted_ids)]
-        
-        # Identificar novos registros (linhas que não existiam em display_df)
-        if not edited_df.empty:
-            max_original_index = len(display_df) - 1 if not display_df.empty else -1
-            new_row_indices = [idx for idx in edited_df.index if idx > max_original_index]
-            new_rows = edited_df.loc[new_row_indices] if new_row_indices else pd.DataFrame()
+            # Linhas com _row_hash são editadas, sem _row_hash são novas
+            if '_row_hash' in edited_df.columns:
+                edited_existing = edited_df[edited_df['_row_hash'].notna()].copy()
+                new_rows = edited_df[edited_df['_row_hash'].isna()].copy()
+            else:
+                # Se não tem hash, todas são novas
+                edited_existing = pd.DataFrame()
+                new_rows = edited_df.copy()
+            
+            # Gerar IDs para novas
+            if not new_rows.empty:
+                new_rows['id'] = [str(uuid.uuid4()) for _ in range(len(new_rows))]
+                if '_row_hash' in new_rows.columns:
+                    new_rows = new_rows.drop(columns=['_row_hash'])
+            
+            # Limpar _row_hash de editadas
+            if not edited_existing.empty and '_row_hash' in edited_existing.columns:
+                edited_existing = edited_existing.drop(columns=['_row_hash'])
+            
+            # Combinar: untouched + editadas + novas
+            final_df = pd.concat([untouched_trans, edited_existing, new_rows], ignore_index=True)
         else:
-            new_rows = pd.DataFrame()
+            # Se edited_df vazio, só manter untouched
+            final_df = untouched_trans.copy()
         
-        # Atualizar registros existentes no df principal
-        if not edited_df.empty:
-            for idx, row in edited_df.iterrows():
-                # Pegar o hash/ID original deste índice
-                if idx in hash_by_index:
-                    row_hash = hash_by_index[idx]
-                    if row_hash in hash_to_id:
-                        row_id = hash_to_id[row_hash]
-                        # Atualizar apenas este registro específico no DataFrame completo
-                        mask = st.session_state.df['id'] == row_id
-                        if mask.any():
-                            # Copiar todas as colunas EXCETO id e _row_hash
-                            for col in edited_df.columns:
-                                if col not in ['id', '_row_hash']:
-                                    st.session_state.df.loc[mask, col] = row[col]
+        # 6. Limpar _row_hash antes de salvar
+        if '_row_hash' in final_df.columns:
+            final_df = final_df.drop(columns=['_row_hash'])
         
-        # Adicionar novos registros ao DataFrame completo
-        if not new_rows.empty:
-            new_rows = new_rows.copy()
-            # Gerar IDs para novos registros e remover _row_hash
-            new_rows['id'] = [str(uuid.uuid4()) for _ in range(len(new_rows))]
-            if '_row_hash' in new_rows.columns:
-                new_rows = new_rows.drop(columns=['_row_hash'])
-            st.session_state.df = pd.concat([st.session_state.df, new_rows], ignore_index=True)
-        
-        # CRÍTICO: Remover _row_hash do DataFrame completo antes de salvar
-        # Esta coluna é apenas auxiliar e NÃO deve ser persistida
-        if '_row_hash' in st.session_state.df.columns:
-            st.session_state.df = st.session_state.df.drop(columns=['_row_hash'])
-        
-        utils.save_data(st.session_state.df)
+        # 7. Salvar e atualizar session state
+        utils.save_data(final_df)
+        st.session_state.df = final_df
         st.success("✅ Dados salvos com sucesso!")
         st.rerun()
 
