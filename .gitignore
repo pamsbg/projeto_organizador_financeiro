@@ -2,22 +2,27 @@
 __pycache__/
 *.pyc
 
-# Dados - NÃO VERSIONAR (Dados Pessoais)
-*.csv
-*.xlsx
-*.json
-!requirements.json
-settings.json
+# Streamlit Secrets (NUNCA versionar - contém senha)
+.streamlit/secrets.toml
 
-# Streamlit
-.streamlit/
+# Dados - PERMITIR para Cloud Persistence (Repo Privado)
+# Os arquivos CSV e JSON agora são versionados para funcionar no Streamlit Cloud
+# base_financeira.csv - VERSIONADO
+# receitas.csv - VERSIONADO  
+# settings.json - VERSIONADO
 
-# Specific Data Folders
-faturas_itau_pamela/
-faturas_nubank_renato/
+# Bloquear apenas backups e temporários
+base_financeira.bak
+*.xlsx  # Planilhas Excel originais não precisam
 
-# Temporary/Debug Scripts
+# Pastas de faturas (opcional - podem ser grandes)
+# faturas_itau_pamela/
+# faturas_nubank_renato/
+
+# Scripts de debug e teste
 debug_*.py
 scan_excel.py
 migrate_excel.py
 fix_csv.py
+test_*.py
+list_models.py

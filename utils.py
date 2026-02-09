@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 import re
-
+import subprocess
 import json
 import uuid
 from datetime import datetime, date
@@ -9,6 +9,49 @@ from datetime import datetime, date
 DATA_FILE = "base_financeira.csv"
 INCOME_FILE = "receitas.csv"
 SETTINGS_FILE = "settings.json"
+
+def is_cloud_environment():
+    """Detecta se está rodando no Streamlit Cloud."""
+    return os.getenv('STREAMLIT_SHARING_MODE') is not None or \
+           os.getenv('STREAMLIT_CLOUD') is not None
+
+def auto_commit_data(message="auto: atualização de dados"):
+    """
+    Faz commit e push automático dos dados quando rodando em cloud.
+    Silencioso - não quebra a aplicação se falhar.
+    """
+    # Só executa em ambiente cloud
+    if not is_cloud_environment():
+        return
+    
+    try:
+        # Verifica se git está disponível
+        subprocess.run(['git', '--version'], capture_output=True, check=True, timeout=5)
+        
+        # Adiciona arquivos de dados
+        data_files = [DATA_FILE, INCOME_FILE, SETTINGS_FILE]
+        for file in data_files:
+            if os.path.exists(file):
+                subprocess.run(['git', 'add', file], capture_output=True, timeout=5)
+        
+        # Commit (ignora se não houver mudanças)
+        result = subprocess.run(
+            ['git', 'commit', '-m', message],
+            capture_output=True,
+            timeout=10
+        )
+        
+        # Se houve commit, faz push
+        if result.returncode == 0:
+            subprocess.run(
+                ['git', 'push'],
+                capture_output=True,
+                timeout=30
+            )
+    except Exception:
+        # Falha silenciosa - não interrompe a aplicação
+        pass
+
 
 DEFAULT_SETTINGS = {
     "categories": [
@@ -208,6 +251,9 @@ def save_data(df):
     if 'dedup_idx' in df.columns:
         df = df.drop(columns=['dedup_idx'])
     df.to_csv(DATA_FILE, index=False)
+    
+    # Auto-commit em ambiente cloud
+    auto_commit_data("auto: atualização de transações")
 
 def load_income_data():
     """Carrega dados de receitas ou cria vazio."""
@@ -238,11 +284,15 @@ def load_income_data():
         df['recurrence'] = df['recurrence'].astype(str)
         df['owner'] = df['owner'].astype(str)
         df['amount'] = df['amount'].astype(float)
+```python
         return df
 
 def save_income_data(df):
     """Salva dados de receitas."""
     df.to_csv(INCOME_FILE, index=False, encoding='utf-8')
+    
+    # Auto-commit em ambiente cloud
+    auto_commit_data("auto: atualização de receitas")
 
 def categorize_transaction(title):
     """Categoriza a transação com base no título, usando regras refinadas."""
