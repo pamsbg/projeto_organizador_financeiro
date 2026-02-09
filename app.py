@@ -735,7 +735,7 @@ with tab4:
             st.divider()
             st.subheader("📊 Análise por Categoria")
             
-            row1_col1, row1_col2 = st.columns([4, 6])
+            row1_col1, row1_col2 = st.columns([5, 5])  # Proporção igual para dar mais espaço ao gráfico
             
             with row1_col1:
                 st.markdown("**Distribuição de Gastos**")
@@ -748,12 +748,13 @@ with tab4:
                         color_discrete_sequence=px.colors.qualitative.Pastel
                     )
                     fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+                    fig_pie.update_layout(height=450)  # Maior altura
                     st.plotly_chart(fig_pie, use_container_width=True, key="dash_pie_chart")
                 else:
                     st.info("Sem gastos.")
             
             with row1_col2:
-                st.markdown("**Detalhamento por Categoria**")
+                st.markdown("**Detalhamento Completo por Categoria**")
                 if not expenses_df.empty:
                     # Criar tabela resumo de categorias
                     category_summary = expenses_df.groupby('category').agg({
@@ -770,7 +771,7 @@ with tab4:
                     category_summary = category_summary.reset_index(drop=True)
                     category_summary.index = category_summary.index + 1  # Começar do 1
                     
-                    # Exibir tabela formatada
+                    # Exibir tabela formatada SEM altura fixa para mostrar tudo
                     st.dataframe(
                         category_summary,
                         column_config={
@@ -792,13 +793,13 @@ with tab4:
                                 format="%.1f%%"
                             )
                         },
-                        use_container_width=True,
-                        height=300  # Altura fixa para melhor visualização
+                        use_container_width=True
+                        # Sem height= para mostrar todas as linhas
                     )
                     
                     # Adicionar resumo rápido abaixo da tabela
                     num_categories = len(category_summary)
-                    st.caption(f"💡 **{num_categories} categorias** com gastos neste período")
+                    st.caption(f"💡 Mostrando todas as **{num_categories} categorias** rankeadas do maior para o menor gasto")
                 else:
                     st.info("Sem dados para exibir.")
             
