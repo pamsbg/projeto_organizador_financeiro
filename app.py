@@ -548,6 +548,10 @@ with tab3:
     
     # Resetar index para evitar warnings com hide_index=True e num_rows=dynamic
     display_df = display_df.reset_index(drop=True)
+    
+    # CRÍTICO: Salvar os IDs ANTES de enviar para o editor
+    # porque st.data_editor com column_config "id": None pode não retornar a coluna
+    original_display_ids = set(display_df['id'].dropna()) if 'id' in display_df.columns else set()
             
     # Editor de Dados (Sempre visível para adição)
     edited_df = st.data_editor(
@@ -577,22 +581,31 @@ with tab3:
         st.write(f"Transações visíveis no filtro (display_df): {len(display_df)}")
         st.write(f"Transações no editor após edição (edited_df): {len(edited_df)}")
         
-        # 1. Identificar IDs que foram DELETADOS (existiam em display_df mas não em edited_df)
-        original_ids = set(display_df['id'].dropna()) if not display_df.empty and 'id' in display_df.columns else set()
+        # 1. Identificar IDs que foram DELETADOS
+        # CORREÇÃO: Usar os IDs salvos ANTES do editor
+        # porque edited_df pode não ter a coluna 'id' (foi ocultada no editor)
         
-        # CORREÇÃO: Verificar se edited_df está vazio ou não tem coluna 'id'
-        if edited_df.empty or 'id' not in edited_df.columns:
-            edited_ids = set()  # Todas as linhas foram deletadas
+        # Para edited_df, precisamos reconstruir os IDs olhando para display_df
+        # Criar um mapeamento index -> id usando display_df original
+        if not display_df.empty and 'id' in display_df.columns:
+            id_by_index = dict(enumerate(display_df['id']))
         else:
-            edited_ids = set(edited_df['id'].dropna())
+            id_by_index = {}
+        
+        # IDs que ainda existem = índices de edited_df mapeados para IDs
+        edited_ids = set()
+        if not edited_df.empty:
+            for idx in edited_df.index:
+                if idx in id_by_index:
+                    edited_ids.add(id_by_index[idx])
         
         # DEBUG EXTRA: Mostrar IDs
-        st.write(f"📋 Total de IDs originais (display_df): {len(original_ids)}")
-        st.write(f"📋 Total de IDs editados (edited_df): {len(edited_ids)}")
-        st.write(f"📋 Primeiros 10 IDs originais: {list(original_ids)[:10]}")
+        st.write(f"📋 Total de IDs originais (salvos antes do editor): {len(original_display_ids)}")
+        st.write(f"📋 Total de IDs editados (reconstruídos): {len(edited_ids)}")
+        st.write(f"📋 Primeiros 10 IDs originais: {list(original_display_ids)[:10]}")
         st.write(f"📋 Primeiros 10 IDs editados: {list(edited_ids)[:10]}")
         
-        deleted_ids = original_ids - edited_ids
+        deleted_ids = original_display_ids - edited_ids
         
         st.write(f"❌ IDs que serão DELETADOS: {len(deleted_ids)}")
         if deleted_ids:
@@ -603,11 +616,14 @@ with tab3:
             st.session_state.df = st.session_state.df[~st.session_state.df['id'].isin(deleted_ids)]
             st.write(f"Total de transações APÓS deleção: {len(st.session_state.df)}")
         
-        # 2. Identificar novos registros (sem ID) - só se edited_df não estiver vazio
+        # 2. Identificar novos registros (linhas que não existiam em display_df)
         if not edited_df.empty:
-            new_rows = edited_df[edited_df['id'].isna() | (edited_df['id'] == '')]
+            # Novas linhas são aquelas cujo index está fora do range original
+            max_original_index = len(display_df) - 1 if not display_df.empty else -1
+            new_row_indices = [idx for idx in edited_df.index if idx > max_original_index]
+            new_rows = edited_df.loc[new_row_indices] if new_row_indices else pd.DataFrame()
         else:
-            new_rows = pd.DataFrame()  # DataFrame vazio
+            new_rows = pd.DataFrame()
         
         st.write(f"➕ Novas transações a adicionar: {len(new_rows)}")
         
@@ -615,12 +631,16 @@ with tab3:
         updates_count = 0
         if not edited_df.empty:
             for idx, row in edited_df.iterrows():
-                if pd.notna(row['id']) and row['id'] != '':
+                # Pegar o ID original deste índice
+                if idx in id_by_index:
+                    row_id = id_by_index[idx]
                     # Atualizar apenas este registro específico no DataFrame completo
-                    mask = st.session_state.df['id'] == row['id']
+                    mask = st.session_state.df['id'] == row_id
                     if mask.any():
+                        # Copiar todas as colunas EXCETO id
                         for col in edited_df.columns:
-                            st.session_state.df.loc[mask, col] = row[col]
+                            if col != 'id':  # Não sobrescrever ID
+                                st.session_state.df.loc[mask, col] = row[col]
                         updates_count += 1
         
         st.write(f"✏️ Transações atualizadas: {updates_count}")
@@ -628,8 +648,8 @@ with tab3:
         # 4. Adicionar novos registros ao DataFrame completo
         if not new_rows.empty:
             new_rows = new_rows.copy()
-            for idx in new_rows.index:
-                new_rows.loc[idx, 'id'] = str(uuid.uuid4())
+            # Gerar IDs para novos registros
+            new_rows['id'] = [str(uuid.uuid4()) for _ in range(len(new_rows))]
             st.session_state.df = pd.concat([st.session_state.df, new_rows], ignore_index=True)
         
         utils.save_data(st.session_state.df)
