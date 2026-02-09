@@ -571,6 +571,12 @@ with tab3:
         # porque usa st.session_state.df (DataFrame completo) e atualiza apenas os IDs editados.
         # Transações filtradas fora da visualização atual NÃO são afetadas.
         
+        # DEBUG: Mostrar informações
+        st.write("🔍 **DEBUG - Informações de Salvamento:**")
+        st.write(f"Total de transações no banco ANTES: {len(st.session_state.df)}")
+        st.write(f"Transações visíveisno filtro (display_df): {len(display_df)}")
+        st.write(f"Transações no editor após edição (edited_df): {len(edited_df)}")
+        
         # 1. Identificar IDs que foram DELETADOS (existiam em display_df mas não em edited_df)
         original_ids = set(display_df['id'].dropna()) if not display_df.empty and 'id' in display_df.columns else set()
         
@@ -582,9 +588,14 @@ with tab3:
         
         deleted_ids = original_ids - edited_ids
         
+        st.write(f"IDs que serão DELETADOS: {len(deleted_ids)}")
+        if deleted_ids:
+            st.write(f"IDs deletados: {list(deleted_ids)[:5]}...")  # Mostra os primeiros 5
+        
         # Remover transações deletadas do DataFrame completo
         if deleted_ids:
             st.session_state.df = st.session_state.df[~st.session_state.df['id'].isin(deleted_ids)]
+            st.write(f"Total de transações APÓS deleção: {len(st.session_state.df)}")
         
         # 2. Identificar novos registros (sem ID) - só se edited_df não estiver vazio
         if not edited_df.empty:
@@ -592,7 +603,10 @@ with tab3:
         else:
             new_rows = pd.DataFrame()  # DataFrame vazio
         
+        st.write(f"Novas transações a adicionar: {len(new_rows)}")
+        
         # 3. Atualizar registros existentes no df principal (por ID - seguro com filtros)
+        updates_count = 0
         if not edited_df.empty:
             for idx, row in edited_df.iterrows():
                 if pd.notna(row['id']) and row['id'] != '':
@@ -601,6 +615,9 @@ with tab3:
                     if mask.any():
                         for col in edited_df.columns:
                             st.session_state.df.loc[mask, col] = row[col]
+                        updates_count += 1
+        
+        st.write(f"Transações atualizadas: {updates_count}")
         
         # 4. Adicionar novos registros ao DataFrame completo
         if not new_rows.empty:
@@ -610,7 +627,12 @@ with tab3:
             st.session_state.df = pd.concat([st.session_state.df, new_rows], ignore_index=True)
         
         utils.save_data(st.session_state.df)
+        st.write(f"✅ Total de transações FINAL salvo no arquivo: {len(st.session_state.df)}")
         st.success("✅ Dados salvos com sucesso!")
+        
+        # Aguardar 3 segundos antes de recarregar para o usuário ver o debug
+        import time
+        time.sleep(3)
         st.rerun()
 
 
