@@ -1,19 +1,19 @@
 # Python
 __pycache__/
 *.pyc
+.packages/
+.venv/
+service_account.json
 
 # Streamlit Secrets (NUNCA versionar - contém senha)
 .streamlit/secrets.toml
 
-# Dados - PERMITIR para Cloud Persistence (Repo Privado)
-# Os arquivos CSV e JSON agora são versionados para funcionar no Streamlit Cloud
-# base_financeira.csv - VERSIONADO
-# receitas.csv - VERSIONADO  
-# settings.json - VERSIONADO
-
-# Bloquear apenas backups e temporários
+# Dados financeiros (agora vivem no Google Sheets)
+base_financeira.csv
+receitas.csv
+settings.json
 base_financeira.bak
-*.xlsx  # Planilhas Excel originais não precisam
+*.xlsx
 
 # Pastas de faturas (opcional - podem ser grandes)
 # faturas_itau_pamela/

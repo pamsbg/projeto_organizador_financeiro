@@ -24,13 +24,33 @@ def check_password():
     password = st.text_input("Senha", type="password")
     
     if st.button("Entrar"):
+        correct_password = None
+        
+        # Tentativa 1: st.secrets (Streamlit Cloud / secrets.toml)
         try:
-            # Tenta pegar a senha dos segredos (Cloud ou Local)
             correct_password = st.secrets["password"]
         except (FileNotFoundError, KeyError):
-            # Fallback seguro para erro de configuração
+            pass
+        
+        # Tentativa 2: secrets_new.toml (fallback local)
+        if correct_password is None:
+            try:
+                import tomllib
+                secrets_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".streamlit", "secrets_new.toml")
+                if os.path.exists(secrets_path):
+                    with open(secrets_path, "rb") as f:
+                        secrets = tomllib.load(f)
+                    correct_password = secrets.get("password")
+            except Exception:
+                pass
+        
+        # Tentativa 3: Variável de ambiente
+        if correct_password is None:
+            correct_password = os.environ.get("APP_PASSWORD")
+        
+        if correct_password is None:
             st.error("⚠️ Senha não configurada!")
-            st.code(f"Esperado em secrets.toml: password = '...'", language="toml")
+            st.code("Esperado em secrets.toml: password = '...'", language="toml")
             return False
 
         if password == correct_password:
