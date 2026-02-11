@@ -368,41 +368,88 @@ with tab2:
             if error:
                 st.error(error)
             else:
-                st.session_state.temp_import_df = new_data
+                # new_data agora é um dict {'expenses': df, 'income': df}
+                st.session_state.temp_import_data = new_data
                 st.session_state.temp_import_meta = {"ref": ref_date, "owner": imp_owner}
-                st.success(f"Arquivo processado! {len(new_data)} transações encontradas.")
+                
+                msg = "Arquivo processado!"
+                exp_count = len(new_data['expenses'])
+                inc_count = len(new_data['income'])
+                
+                if exp_count > 0: msg += f" {exp_count} despesas."
+                if inc_count > 0: msg += f" {inc_count} receitas."
+                
+                st.success(msg)
                 
     # Se já processou, mostrar preview e botão confirmar
-    if 'temp_import_df' in st.session_state and st.session_state.temp_import_df is not None:
+    if 'temp_import_data' in st.session_state and st.session_state.temp_import_data is not None:
         st.divider()
         st.subheader("Pré-visualização dos Dados")
         
-        st.dataframe(st.session_state.temp_import_df.head(10), use_container_width=True)
-        st.caption("Exibindo as 10 primeiras linhas.")
+        import_data = st.session_state.temp_import_data
+        has_expenses = not import_data['expenses'].empty
+        has_income = not import_data['income'].empty
+        
+        # Preview de Receitas (se houver)
+        if has_income:
+            st.markdown("### 💰 Receitas a Importar")
+            st.dataframe(import_data['income'].head(5), use_container_width=True)
+            if len(import_data['income']) > 5:
+                st.caption(f"... e mais {len(import_data['income']) - 5} receitas.")
+                
+        # Preview de Despesas (se houver)
+        if has_expenses:
+            st.markdown("### 📝 Despesas a Importar")
+            st.dataframe(import_data['expenses'].head(5), use_container_width=True)
+            if len(import_data['expenses']) > 5:
+                st.caption(f"... e mais {len(import_data['expenses']) - 5} despesas.")
         
         col_act1, col_act2 = st.columns(2)
         
         with col_act1:
             if st.button("✅ Confirmar e Salvar no Banco de Dados"):
-                # Mesclar e Salvar
-                current_df = st.session_state.df
-                new_df = st.session_state.temp_import_df
+                # 1. Salvar Despesas
+                duplicates_exp = 0
+                new_exp_count = 0
                 
-                combined_df, duplicates = utils.merge_and_save(current_df, new_df)
+                if has_expenses:
+                    current_df = st.session_state.df
+                    new_exp_df = import_data['expenses']
+                    combined_df, duplicates_exp = utils.merge_and_save(current_df, new_exp_df)
+                    st.session_state.df = combined_df # Atualiza estado
+                    new_exp_count = len(new_exp_df) - duplicates_exp
+
+                # 2. Salvar Receitas
+                duplicates_inc = 0
+                new_inc_count = 0
                 
-                st.session_state.df = combined_df # Atualiza estado
+                if has_income:
+                    # Carregar receitas atuais para mesclar
+                    current_income = utils.load_income_data()
+                    new_inc_df = import_data['income']
+                    
+                    combined_inc, duplicates_inc = utils.merge_and_save_income(current_income, new_inc_df)
+                    new_inc_count = len(new_inc_df) - duplicates_inc
                 
                 # Limpar temp
-                del st.session_state.temp_import_df
+                del st.session_state.temp_import_data
                 
-                st.success(f"Importação Concluída! {len(new_df) - duplicates} novas transações adicionadas.")
-                if duplicates > 0:
-                    st.warning(f"{duplicates} transações duplicadas foram ignoradas.")
+                # Relatório
+                st.success("Importação Concluída!")
+                
+                if new_exp_count > 0:
+                    st.info(f"📝 {new_exp_count} novas despesas adicionadas.")
+                if new_inc_count > 0:
+                    st.info(f"💰 {new_inc_count} novas receitas adicionadas.")
+                    
+                if duplicates_exp > 0 or duplicates_inc > 0:
+                    st.warning(f"Ignorados (duplicados): {duplicates_exp} despesas, {duplicates_inc} receitas.")
+                    
                 st.rerun()
                 
         with col_act2:
             if st.button("❌ Cancelar"):
-                del st.session_state.temp_import_df
+                del st.session_state.temp_import_data
                 st.rerun()
 
 # --- ABA 3: TRANSAÇÕES ---

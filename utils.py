@@ -348,10 +348,34 @@ def extract_date_from_filename(filename):
     
     return None, None
 
-def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
-    """Processa arquivo CSV genérico (vários bancos) e retorna DataFrame padronizado."""
+def clean_amount_str(val):
+    """Limpa string de valor financeiro para float."""
+    if isinstance(val, (int, float)): return float(val)
+    val = str(val).strip()
+    val = val.replace('R$', '').replace('$', '').strip()
+    
+    # Caso Brasileiro: 1.200,50 -> Se tem vírgula no final e ponto no meio
+    if ',' in val and '.' in val:
+        if val.rfind(',') > val.rfind('.'): # Ex: 1.000,00
+            val = val.replace('.', '').replace(',', '.')
+    elif ',' in val: # Ex: 1000,00
+            val = val.replace(',', '.')
+    
     try:
-        # Tentar ler com diferentes encodings e separadores
+        return float(val)
+    except:
+        return None  # Retorna None se falhar
+
+def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
+    """
+    Processa arquivo CSV/Extrato e retorna dicionário com DataFrames.
+    
+    Returns:
+        dict: {'expenses': pd.DataFrame, 'income': pd.DataFrame}
+        error: str (ou None)
+    """
+    try:
+        # 1. Ler arquivo
         try:
             df = pd.read_csv(uploaded_file)
         except:
@@ -359,107 +383,174 @@ def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
             df = pd.read_csv(uploaded_file, sep=';', encoding='latin1')
             
         # Normalizar colunas
-        df.columns = [c.lower().strip() for c in df.columns]
+        df.columns = [str(c).lower().strip() for c in df.columns]
         
-        # Mapeamento de Colunas Inteligente
         col_map = {}
         
-        # 1. Identificar Data
+        # 2. Identificar Data
         date_cols = [c for c in df.columns if any(k in c for k in ['data', 'date', 'dia', 'dt'])]
         if not date_cols: return None, "Coluna de Data não encontrada."
         col_map['date'] = date_cols[0]
         
-        # 2. Identificar Descrição
-        title_cols = [c for c in df.columns if any(k in c for k in ['descri', 'title', 'historico', 'estab', 'loja', 'nome', 'lançamento', 'lancamento'])]
+        # 3. Identificar Descrição
+        title_cols = [c for c in df.columns if any(k in c for k in ['descri', 'title', 'historico', 'hist', 'estab', 'loja', 'nome', 'lançamento', 'lancamento'])]
         if not title_cols: return None, "Coluna de Descrição não encontrada."
         col_map['title'] = title_cols[0]
         
-        # 3. Identificar Valor
-        amount_cols = [c for c in df.columns if any(k in c for k in ['valor', 'amount', 'preco', 'r$'])]
-        if not amount_cols: return None, "Coluna de Valor não encontrada."
-        col_map['amount'] = amount_cols[0]
+        # 4. Identificar Valor (Smart Detection)
+        # Em vez de confiar só no nome, vamos testar o conteúdo
+        amount_col_candidate = None
         
-        # Renomear para padrão
+        # Candidatos pelo nome
+        name_candidates = [c for c in df.columns if any(k in c for k in ['valor', 'amount', 'preco', 'r$', 'saldo'])]
+        
+        # Verificar cada coluna numérica
+        max_valid_ratio = 0
+        best_col = None
+        
+        for col in df.columns:
+            # Tentar converter amostra
+            sample = df[col].astype(str).head(20).apply(clean_amount_str)
+            valid_ratio = sample.notna().mean()
+            
+            if valid_ratio > 0.8: # Se 80% parecer número
+                # Se for candidato por nome, ganha pontos extra
+                score = valid_ratio
+                if col in name_candidates: score += 0.2
+                # Se tiver negativos, é forte indício de extrato
+                if (sample.dropna() < 0).any(): score += 0.1
+                
+                if score > max_valid_ratio:
+                    max_valid_ratio = score
+                    best_col = col
+                    
+        if best_col:
+            col_map['amount'] = best_col
+        else:
+            return None, "Não foi possível identificar a coluna de valor automaticamente."
+
+        # Renomear e limpar
         new_df = df.rename(columns={col_map['date']: 'date', col_map['title']: 'title', col_map['amount']: 'amount'})
         new_df = new_df[['date', 'title', 'amount']].copy()
         
-        # --- Limpeza de Dados ---
+        # Limpar valores
+        new_df['amount'] = new_df['amount'].apply(clean_amount_str).fillna(0.0)
         
-        # Valor: Tratar formato brasileiro (1.000,00) ou americano (1,000.00)
-        def clean_amount(val):
-            if isinstance(val, (int, float)): return float(val)
-            val = str(val).strip()
-            # Se tem R$, tira
-            val = val.replace('R$', '').replace('$', '').strip()
-            
-            # Caso Brasileiro: 1.200,50 -> Se tem vírgula no final e ponto no meio
-            if ',' in val and '.' in val:
-                if val.rfind(',') > val.rfind('.'): # Ex: 1.000,00
-                    val = val.replace('.', '').replace(',', '.')
-            elif ',' in val: # Ex: 1000,00
-                 val = val.replace(',', '.')
-            
-            try:
-                return float(val)
-            except:
-                return 0.0
-
-        new_df['amount'] = new_df['amount'].apply(clean_amount)
-        
-        # Data: Tentar converter múltiplos formatos
+        # Limpar Datas
         iso_dates = pd.to_datetime(new_df['date'], format='%Y-%m-%d', errors='coerce')
-        
         if iso_dates.isna().any():
             br_dates = pd.to_datetime(new_df['date'], format='%d/%m/%Y', errors='coerce')
             iso_dates = iso_dates.fillna(br_dates)
-            
             generic_dates = pd.to_datetime(new_df['date'], dayfirst=True, errors='coerce')
             iso_dates = iso_dates.fillna(generic_dates)
             
         new_df['date'] = iso_dates.dt.date
         new_df = new_df.dropna(subset=['date'])
         
-        # Categorização e Enriquecimento
-        new_df['category'] = new_df['title'].apply(categorize_transaction)
-        new_df['installment_info'] = new_df['title'].apply(extract_installment_info)
+        # --- Lógica de Extrato vs Fatura ---
+        is_extrato = 'extrato' in uploaded_file.name.lower()
         
-        # Referência
-        if reference_date:
-            new_df['reference_date'] = reference_date
+        expenses_data = []
+        income_data = []
+        
+        if is_extrato:
+            # Extrato: Positivo = Receita, Negativo = Despesa
+            income_rows = new_df[new_df['amount'] > 0].copy()
+            expense_rows = new_df[new_df['amount'] < 0].copy()
+            
+            # Processar Receitas
+            if not income_rows.empty:
+                income_rows['source'] = income_rows['title'] # Descrição vira Fonte
+                income_rows['type'] = 'Extra'
+                income_rows['recurrence'] = 'Única'
+                income_rows['owner'] = owner
+                income_data = income_rows
+            
+            # Processar Despesas (converter para positivo)
+            if not expense_rows.empty:
+                expense_rows['amount'] = expense_rows['amount'].abs()
+                expenses_data = expense_rows
         else:
-            new_df['reference_date'] = new_df['date']
+            # Fatura / Padrão: Tudo é Despesa
+            # Se vier negativo, converte pra positivo (comum em alguns csvs)
+            new_df['amount'] = new_df['amount'].abs()
+            expenses_data = new_df
             
-        # Owner
-        new_df['owner'] = owner
+        # --- Enriquecer Despesas ---
+        final_expenses = pd.DataFrame()
+        if hasattr(expenses_data, 'empty') and not expenses_data.empty:
+            expenses_data['category'] = expenses_data['title'].apply(categorize_transaction)
+            expenses_data['installment_info'] = expenses_data['title'].apply(extract_installment_info)
+            if reference_date:
+                expenses_data['reference_date'] = reference_date
+            else:
+                expenses_data['reference_date'] = expenses_data['date']
+            expenses_data['owner'] = owner
             
-        # --- Deduplicação Intra-Arquivo ---
-        new_df = new_df.sort_values(by=['date', 'title', 'amount'])
-        new_df['dedup_idx'] = new_df.groupby(['date', 'title', 'amount']).cumcount()
+            # Deduplicação Intra-Arquivo
+            expenses_data = expenses_data.sort_values(by=['date', 'title', 'amount'])
+            expenses_data['dedup_idx'] = expenses_data.groupby(['date', 'title', 'amount']).cumcount()
+            expenses_data['id'] = expenses_data.apply(generate_id, axis=1)
+            final_expenses = expenses_data
             
-        # ID Único
-        new_df['id'] = new_df.apply(generate_id, axis=1)
+        return {
+            'expenses': final_expenses,
+            'income': pd.DataFrame(income_data)
+        }, None
         
-        return new_df, None
     except Exception as e:
         return None, f"Erro ao processar CSV: {str(e)}"
 
 def merge_and_save(current_df, new_df):
-    """Mescla novos dados com os atuais, usando ID para remover duplicatas."""
+    """Mescla novos dados de DESPESAS com os atuais."""
+    if new_df.empty: return current_df, 0
     
     if not current_df.empty and 'id' not in current_df.columns:
         current_df['id'] = current_df.apply(generate_id, axis=1)
         
     existing_ids = set(current_df['id'].values) if not current_df.empty else set()
     
-    unique_new_df = new_df[~new_df['id'].isin(existing_ids)]
-    duplicates_count = len(new_df) - len(unique_new_df)
+    unique_new = new_df[~new_df['id'].isin(existing_ids)]
+    duplicates = len(new_df) - len(unique_new)
     
-    if not unique_new_df.empty:
-        combined = pd.concat([current_df, unique_new_df], ignore_index=True)
+    if not unique_new.empty:
+        combined = pd.concat([current_df, unique_new], ignore_index=True)
         save_data(combined)
-        return combined, duplicates_count
+        return combined, duplicates
+    return current_df, duplicates
+
+def merge_and_save_income(current_income, new_income):
+    """Mescla novos dados de RECEITAS com os atuais."""
+    if new_income.empty: return current_income, 0
+
+    # Gerar ID temporário para deduplicação (hash de campos chave)
+    def get_hash(row):
+        return hash((str(row['date']), str(row['source']), str(row['amount']), str(row['owner'])))
+    
+    if not current_income.empty:
+        current_hashes = set(current_income.apply(get_hash, axis=1))
     else:
-        return current_df, duplicates_count
+        current_hashes = set()
+        
+    # Filtrar novas
+    to_add = []
+    duplicates = 0
+    
+    for _, row in new_income.iterrows():
+        h = get_hash(row)
+        if h not in current_hashes:
+            to_add.append(row)
+            current_hashes.add(h) # Evitar duplicar no próprio lote
+        else:
+            duplicates += 1
+            
+    if to_add:
+        new_rows_df = pd.DataFrame(to_add)
+        combined = pd.concat([current_income, new_rows_df], ignore_index=True)
+        save_income_data(combined)
+        return combined, duplicates
+        
+    return current_income, duplicates
 
 def load_excel_projections(file_path):
     """Lê as projeções de Renda e Gastos da planilha Excel ('Tabelas')."""
