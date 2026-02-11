@@ -4,7 +4,9 @@ import plotly.express as px
 from datetime import datetime, date
 import uuid
 import utils
+import utils
 import os
+import time
 
 # Configuração da Página
 st.set_page_config(page_title="Organizador Financeiro", layout="wide", page_icon="💰")
@@ -81,8 +83,18 @@ if 'settings' not in st.session_state:
 
 settings = st.session_state.settings
 
+if st.session_state.get("just_refreshed"):
+    st.toast("Dados e Configurações atualizados da Nuvem (Google Sheets)!", icon="☁️")
+    st.session_state.just_refreshed = False
+
 # --- SIDEBAR: CONFIGURAÇÕES ---
 with st.sidebar:
+    if st.button("🔄 Atualizar Dados"):
+        st.session_state.df = utils.load_data()
+        st.session_state.settings = utils.load_settings()
+        st.session_state.just_refreshed = True
+        st.rerun()
+
     st.info(f"📂 Dados Carregados: {len(df)} registros")
     
     # Filtro de Pessoa (Global para TODAS as abas)
@@ -95,9 +107,17 @@ with st.sidebar:
         if st.button("Adicionar"):
             if new_cat and new_cat not in settings["categories"]:
                 settings["categories"].append(new_cat)
-                utils.save_settings(settings)
-                st.success(f"Categoria '{new_cat}' adicionada!")
-                st.rerun()
+                # Adicionar linha padrão no DF de metas se não existir
+                if "budgets_df" in settings:
+                     new_row = pd.DataFrame([{"Categoria": new_cat, "Valor": 0.0, "Mes": 0, "Ano": 0}])
+                     settings["budgets_df"] = pd.concat([settings["budgets_df"], new_row], ignore_index=True)
+                
+                if utils.save_settings(settings):
+                    st.success(f"Categoria '{new_cat}' adicionada!")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("Erro ao salvar categoria na nuvem via gspread.")
             elif new_cat in settings["categories"]:
                 st.warning("Categoria já existe.")
         
@@ -105,12 +125,17 @@ with st.sidebar:
         if st.button("Remover"):
             if cat_to_remove in settings["categories"]:
                 settings["categories"].remove(cat_to_remove)
-                # Remove budget associado se existir
-                if cat_to_remove in settings["budgets"]:
-                    del settings["budgets"][cat_to_remove]
-                utils.save_settings(settings)
-                st.success(f"Categoria '{cat_to_remove}' removida!")
-                st.rerun()
+                # Remove do DataFrame de Metas
+                if "budgets_df" in settings:
+                    df_b = settings["budgets_df"]
+                    settings["budgets_df"] = df_b[df_b["Categoria"] != cat_to_remove]
+                
+                if utils.save_settings(settings):
+                    st.success(f"Categoria '{cat_to_remove}' removida!")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("Erro ao remover categoria da nuvem.")
 
     st.divider()
     with st.expander("🗑️ Zona de Perigo (Apagar Dados)"):
@@ -118,26 +143,51 @@ with st.sidebar:
         
         # Opção 1: Limpar Mês/Ano
         st.subheader("Limpar Período")
-        del_month = st.selectbox("Mês", range(1, 13), index=datetime.now().month-1, key="del_m")
-        del_year = st.selectbox("Ano", range(2024, 2031), index=2, key="del_y")
+        col_del1, col_del2 = st.columns(2)
+        with col_del1:
+            del_month = st.selectbox("Mês", range(1, 13), index=datetime.now().month-1, key="del_m")
+        with col_del2:
+            del_year = st.selectbox("Ano", range(2024, 2031), index=2, key="del_y")
         
-        if st.button("Limpar Dados do Mês/Ano"):
-            if not df.empty:
-                # Filtrar TUDO que NÃO for do mês/ano selecionado (Date e Reference Date)
-                # Aqui vamos usar Reference Date como critério principal se existir, ou Date.
-                # Para ser seguro, removemos se QUALQUER uma das datas bater? Ou só Reference?
-                # Vamos remover pela Data de Referência (Competência), pois é como organizamos.
-                
-                df['ref_dt_obj'] = pd.to_datetime(df['reference_date'])
-                mask_keep = ~((df['ref_dt_obj'].dt.month == del_month) & (df['ref_dt_obj'].dt.year == del_year))
-                
-                new_df_kept = df[mask_keep].drop(columns=['ref_dt_obj'])
-                st.session_state.df = new_df_kept
-                utils.save_data(new_df_kept)
-                st.success(f"Dados de {del_month}/{del_year} apagados.")
-                st.rerun()
+        # Checkboxes para o que apagar
+        del_expenses = st.checkbox("Apagar Despesas (Transações)", value=True)
+        del_income = st.checkbox("Apagar Receitas", value=False)
+        
+        st.info("ℹ️ Isso apaga os dados do **Banco de Dados (Planilha)**. Seus arquivos CSV originais no Google Drive **não** são afetados. Para restaurar, você precisará importar novamente.")
+
+        if st.button("🗑️ Confirmar Exclusão"):
+            if not del_expenses and not del_income:
+                st.warning("Selecione pelo menos um tipo de dado para apagar.")
             else:
-                st.info("Nada para apagar.")
+                msg_success = []
+                # Apagar Despesas
+                if del_expenses and not df.empty:
+                    # Garantir datetime
+                    df['dt_obj'] = pd.to_datetime(df['date'], errors='coerce')
+                    mask_keep = ~((df['dt_obj'].dt.month == del_month) & (df['dt_obj'].dt.year == del_year))
+                    
+                    new_df_kept = df[mask_keep].drop(columns=['dt_obj'])
+                    st.session_state.df = new_df_kept
+                    utils.save_data(new_df_kept)
+                    msg_success.append("Despesas")
+
+                # Apagar Receitas
+                if del_income:
+                    # Carregar receitas atuais para garantir que temos o último estado
+                    curr_income = utils.load_income_data()
+                    if not curr_income.empty and 'date' in curr_income.columns:
+                        curr_income['dt_temp'] = pd.to_datetime(curr_income['date'], errors='coerce')
+                        mask_inc_keep = ~((curr_income['dt_temp'].dt.month == del_month) & (curr_income['dt_temp'].dt.year == del_year))
+                        new_inc_kept = curr_income[mask_inc_keep].drop(columns=['dt_temp'])
+                        utils.save_income_data(new_inc_kept)
+                        msg_success.append("Receitas")
+                
+                if msg_success:
+                     st.success(f"Dados de {del_month}/{del_year} ({', '.join(msg_success)}) apagados.")
+                     time.sleep(1.5)
+                     st.rerun()
+                else:
+                     st.warning(f"Nenhum dado encontrado para apagar em {del_month}/{del_year}.")
                 
         # Opção 2: Reset Total
         if st.button("🔥 APAGAR TUDO (Reset)"):
@@ -147,7 +197,7 @@ with st.sidebar:
             st.rerun()
 
 # Criar Abas (Ordem Solicitada: Receitas, Importar, Transações, Dashboard, Planejamento, Projeções)
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💰 Receitas", "📥 Importar", "📝 Transações", "📊 Dashboard", "🎯 Planejamento", "🔮 Projeções"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💰 Receitas", "📥 Importar", "📝 Transações", "📊 Dashboard", "🎯 Metas", "🔮 Projeções"])
 
 # --- ABA 1: RECEITAS (NOVO LOCAL) ---
 with tab1:
@@ -203,6 +253,36 @@ with tab1:
     else:
         st.caption("Editando **Todas** as receitas")
 
+    # --- Filtros e Ordenação Avançada (Receitas) ---
+    col_search_inc, _ = st.columns([2, 1])
+    with col_search_inc:
+        search_term_inc = st.text_input("🔍 Buscar Receita", placeholder="Ex: Salário, Rendimento...", key="search_income")
+    
+    if search_term_inc and 'source' in display_income.columns:
+         display_income = display_income[display_income['source'].astype(str).str.contains(search_term_inc, case=False, na=False)]
+
+    # Ordenação (Igual transações)
+    st.caption("Ordenar por:")
+    col_sort_inc = st.columns(4)
+    sort_opts_inc = ["Data", "Fonte", "Valor", "Pessoa"]
+    sort_cols_map_inc = {"Data": "date", "Fonte": "source", "Valor": "amount", "Pessoa": "owner"}
+    
+    active_sorts_inc = []
+    sort_ascending_inc = []
+    
+    for i, col_name in enumerate(sort_opts_inc):
+        with col_sort_inc[i]:
+             clicked = st.checkbox(col_name, key=f"sort_inc_{col_name}")
+             if clicked:
+                 active_sorts_inc.append(sort_cols_map_inc[col_name])
+                 # Direção para cada coluna
+                 direction = st.radio("Direção", ["Asc", "Desc"], key=f"dir_inc_{col_name}", label_visibility="collapsed", horizontal=True)
+                 sort_ascending_inc.append(True if direction == "Asc" else False)
+
+    if active_sorts_inc:
+        if 'date' in display_income.columns: # date já deve ser datetime
+             display_income = display_income.sort_values(by=active_sorts_inc, ascending=sort_ascending_inc)
+
     # Resetar index para evitar colunas estranhas no editor e garantir alinhamento
     display_income = display_income.reset_index(drop=True)
 
@@ -213,18 +293,18 @@ with tab1:
         use_container_width=True,
         hide_index=True,
         column_config={
-            "_temp_id": None,  # CRÍTICO: Ocultar ID temporário do usuário
-            "date": st.column_config.DateColumn("Data de Entrada", format="DD/MM/YYYY"),
-            "source": st.column_config.TextColumn("Fonte (Ex: Salário, Aluguel)"),
+            "date": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
+            "source": st.column_config.TextColumn("Fonte de Renda"),
             "amount": st.column_config.NumberColumn("Valor (R$)", format="R$ %.2f"),
             "type": st.column_config.SelectboxColumn("Tipo", options=["Fixo", "Variável", "Extra"]),
             "recurrence": st.column_config.SelectboxColumn("Recorrência", options=["Mensal", "Única", "Anual"]),
-            "owner": st.column_config.SelectboxColumn("Pessoa", options=["Pamela", "Renato", "Família"])
+            "owner": st.column_config.SelectboxColumn("Pessoa", options=["Pamela", "Renato", "Família"]),
+            "_temp_id": None # Esconder ID
         }, 
-        key=f"income_editor_main_{owner_filter}_{selected_month_rec}_{selected_year_rec}" # Key dinâmica para forçar reset ao mudar filtros
+        key="income_editor"
     )
     
-    if st.button("Salvar Receitas"):
+    if st.button("💾 Salvar Alterações de Receita"):
         # REFATORAÇÃO: Usar mesmo padrão de Transações (consistência!)
         # 1. Carregar DataFrame completo do disco
         full_income = utils.load_income_data()
@@ -360,26 +440,33 @@ with tab2:
         
     if uploaded_file:
         if st.button("Processar Arquivo"):
-            # Referência: Primeiro dia do mês selecionado
-            ref_date = date(imp_year, imp_month, 1)
-            
-            new_data, error = utils.process_uploaded_file(uploaded_file, reference_date=ref_date, owner=imp_owner)
-            
-            if error:
-                st.error(error)
-            else:
-                # new_data agora é um dict {'expenses': df, 'income': df}
-                st.session_state.temp_import_data = new_data
-                st.session_state.temp_import_meta = {"ref": ref_date, "owner": imp_owner}
+            try:
+                # Referência: Primeiro dia do mês selecionado
+                ref_date = date(imp_year, imp_month, 1)
                 
-                msg = "Arquivo processado!"
-                exp_count = len(new_data['expenses'])
-                inc_count = len(new_data['income'])
+                new_data, error = utils.process_uploaded_file(uploaded_file, reference_date=ref_date, owner=imp_owner)
                 
-                if exp_count > 0: msg += f" {exp_count} despesas."
-                if inc_count > 0: msg += f" {inc_count} receitas."
-                
-                st.success(msg)
+                if error:
+                    st.error(error)
+                else:
+                    # new_data agora é um dict {'expenses': df, 'income': df}
+                    st.session_state.temp_import_data = new_data
+                    st.session_state.temp_import_meta = {"ref": ref_date, "owner": imp_owner}
+                    
+                    msg = "Arquivo processado!"
+                    exp_count = len(new_data['expenses'])
+                    inc_count = len(new_data['income'])
+                    
+                    if exp_count > 0: msg += f" {exp_count} despesas."
+                    if inc_count > 0: msg += f" {inc_count} receitas."
+                    
+                    st.success(msg)
+
+            except Exception as e:
+                st.error(f"Erro Crítico ao processar arquivo: {str(e)}")
+                # Opcional: imprimir traceback no terminal para debug
+                import traceback
+                print(traceback.format_exc())
                 
     # Se já processou, mostrar preview e botão confirmar
     if 'temp_import_data' in st.session_state and st.session_state.temp_import_data is not None:
@@ -390,17 +477,29 @@ with tab2:
         has_expenses = not import_data['expenses'].empty
         has_income = not import_data['income'].empty
         
+        # Configuração comum de colunas para preview
+        preview_cols = {
+            "id": None, "dedup_idx": None,
+            "date": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
+            "reference_date": st.column_config.DateColumn("Mês Ref.", format="DD/MM/YYYY"),
+            "title": st.column_config.TextColumn("Descrição"),
+            "source": st.column_config.TextColumn("Fonte"),
+            "amount": st.column_config.NumberColumn("Valor (R$)", format="R$ %.2f"),
+            "category": st.column_config.TextColumn("Categoria"),
+            "owner": st.column_config.TextColumn("Pessoa")
+        }
+
         # Preview de Receitas (se houver)
         if has_income:
             st.markdown("### 💰 Receitas a Importar")
-            st.dataframe(import_data['income'].head(5), use_container_width=True)
+            st.dataframe(import_data['income'].head(5), use_container_width=True, column_config=preview_cols)
             if len(import_data['income']) > 5:
                 st.caption(f"... e mais {len(import_data['income']) - 5} receitas.")
                 
         # Preview de Despesas (se houver)
         if has_expenses:
             st.markdown("### 📝 Despesas a Importar")
-            st.dataframe(import_data['expenses'].head(5), use_container_width=True)
+            st.dataframe(import_data['expenses'].head(5), use_container_width=True, column_config=preview_cols)
             if len(import_data['expenses']) > 5:
                 st.caption(f"... e mais {len(import_data['expenses']) - 5} despesas.")
         
@@ -466,6 +565,27 @@ with tab3:
     if not df.empty:
         import ml_patterns  # Importação do módulo de aprendizado
         
+        # Sincronização Automática de Categorias (DESATIVADO A PEDIDO DO USUÁRIO)
+        # Motivo: Usuário quer deletar categorias e garantir que elas não voltem sozinhas,
+        # mesmo que existam no histórico de transações.
+        # unique_cats_in_df = set(df['category'].dropna().unique())
+        # # Remove vazios e NaNs da lista de candidatos
+        # unique_cats_in_df = {c for c in unique_cats_in_df if isinstance(c, str) and c.strip() and c.lower() not in ['nan', 'none']}
+        
+        # current_settings_cats = set(settings.get("categories", []))
+        # new_cats_found = list(unique_cats_in_df - current_settings_cats)
+        
+        # if new_cats_found:
+        #     new_cats_found.sort()
+        #     # st.toast(f"Novas categorias detectadas: {', '.join(new_cats_found)}. Salvando...", icon="💾")
+        #     # settings["categories"].extend(new_cats_found)
+        #     # settings["categories"] = sorted(list(set(settings["categories"]))) # Remove dups e ordena
+        #     # st.session_state.settings = settings # Atualiza session state
+        #     # utils.save_settings(settings) # Salva no Google Sheets
+        #     # time.sleep(1) # Breve pausa para garantir update visual
+        #     # st.rerun() # Recarrega para que o dropdown use a nova lista imediatamente
+        pass
+
         with st.expander("🧙‍♂️ Mágico de Categorização (Regras + Aprendizado)"):
             st.write("Analisa suas transações usando:")
             st.markdown("- **Regras fixas** (Nowpark → Transporte, Uber → Transporte, etc)")
@@ -474,7 +594,8 @@ with tab3:
             
             col_wiz1, col_wiz2 = st.columns(2)
             with col_wiz1:
-                wiz_target = st.radio("Escopo da Busca:", ["Apenas 'Outros'", "Todas as Categorias"], index=0)
+                # Mudança para Multiselect conforme pedido
+                wiz_target = st.multiselect("Escopo da Busca:", ["Vazias", "Outros/Geral", "Todas as Categorias"], default=["Vazias"])
             
             if st.button("🔍 Buscar Sugestões"):
                 # Aprende com dados históricos
@@ -482,13 +603,22 @@ with tab3:
                 
                 wiz_suggestions = []
                 for idx, row in df.iterrows():
-                    # Pular categorias de sistema/pagamento
-                    if row['category'] in ['Pagamento/Crédito']: 
-                        continue
+                    # Normalizar categoria atual para verificação
+                    current_cat = str(row['category']).strip()
+                    if current_cat.lower() in ['nan', 'none']: 
+                        current_cat = ""
+
+                    # Identificar tipo
+                    is_empty = (current_cat == "")
+                    is_others = (current_cat in ['Outros', 'Geral'])
                     
-                    # Filtro de escopo
-                    if wiz_target == "Apenas 'Outros'" and row['category'] not in ['Outros', '', 'Geral']: 
-                        continue
+                    # Filtro de Inclusão
+                    include = False
+                    if "Todas as Categorias" in wiz_target: include = True
+                    if "Vazias" in wiz_target and is_empty: include = True
+                    if "Outros/Geral" in wiz_target and is_others: include = True
+                    
+                    if not include: continue
 
                     # 1. Tenta regras fixas primeiro
                     suggested = utils.categorize_transaction(row['title'])
@@ -532,21 +662,25 @@ with tab3:
                     st.session_state.wiz_suggestions,
                     column_config={
                         "id": None, 
+                        "Descrição": st.column_config.TextColumn("Descrição", width="large", help="Descrição original do banco"),
+                        "Categoria Atual": st.column_config.TextColumn("Categoria Atual", width="large"),
                         "Valor": st.column_config.NumberColumn(
                             "Valor (R$)",
-                            format="R$ %.2f"
+                            format="R$ %.2f",
+                            width="small"
                         ),
-                        "Pessoa": st.column_config.TextColumn("Pessoa"),
+                        "Pessoa": st.column_config.TextColumn("Pessoa", width="small"),
                         "Nova Categoria": st.column_config.SelectboxColumn(
                             "Nova Categoria",
                             options=[""] + settings["categories"],
-                            required=False
+                            required=False,
+                            width="large"
                         ),
-                        "Aplicar?": st.column_config.CheckboxColumn("Aplicar?", default=True)
+                        "Aplicar?": st.column_config.CheckboxColumn("Aplicar?", default=True, width="small")
                     },
                     disabled=["Data", "Descrição", "Valor", "Pessoa", "Categoria Atual"],
                     hide_index=True,
-                    use_container_width=True,
+                    use_container_width=False,
                     key="wizard_table"
                 )
                 
@@ -605,15 +739,18 @@ with tab3:
         
         # Ordenação Multi-Coluna (Solicitação do Usuário)
         st.caption("Ordenação Personalizada")
-        col_sort1, col_sort2 = st.columns(2)
+        col_sort1, col_sort2 = st.columns([2, 1])
         with col_sort1:
             # Opções amigáveis para o usuário
-            sort_cols = st.multiselect("Ordenar por:", ['DATA', 'VALOR', 'CATEGORIA', 'DESCRIÇÃO', 'PESSOA'], default=['DATA'])
-        with col_sort2:
-            sort_order = st.radio("Ordem:", ["Crescente", "Decrescente"], horizontal=True, index=1)
-            
+            sort_cols = st.multiselect("Ordenar por:", ['DATA', 'VALOR', 'CATEGORIA', 'DESCRIÇÃO', 'PESSOA'], default=['DATA'], key="sort_cols_trans")
+        
+        sort_directions = []
         if sort_cols:
-            ascending = True if sort_order == "Crescente" else False
+            with col_sort2:
+                st.caption("Direção")
+                for col in sort_cols:
+                     direction = st.selectbox(f"Ordem de {col}", ["Decrescente", "Crescente"], key=f"sort_dir_trans_{col}", label_visibility="collapsed")
+                     sort_directions.append(True if direction == "Crescente" else False)
             
             # Mapeamento de nomes amigáveis para colunas reais
             col_map = {
@@ -625,7 +762,8 @@ with tab3:
             }
             real_cols = [col_map[c] for c in sort_cols]
             
-            display_df = display_df.sort_values(by=real_cols, ascending=ascending)
+            if real_cols:
+                display_df = display_df.sort_values(by=real_cols, ascending=sort_directions)
     
     # SOLUÇÃO DEFINITIVA: Criar hash único APÓS TODOS OS FILTROS
     # Isso garante que rastreamos corretamento os IDs das linhas filtradas
@@ -638,7 +776,15 @@ with tab3:
     # Resetar index para evitar warnings com hide_index=True e num_rows=dynamic
     display_df = display_df.reset_index(drop=True)
     
+    # CORREÇÃO DE ERRO PYARROW: Converter date/reference_date para datetime64 (Timestamp)
+    # Streamlit/PyArrow não lidam bem com objetos datetime.date puros em edições
+    if 'date' in display_df.columns:
+         display_df['date'] = pd.to_datetime(display_df['date'], errors='coerce')
+    if 'reference_date' in display_df.columns:
+         display_df['reference_date'] = pd.to_datetime(display_df['reference_date'], errors='coerce')
+
     # CRÍTICO: Salvar os hashes ANTES de enviar para o editor
+
     original_hashes = set(display_df['_row_hash'].dropna()) if '_row_hash' in display_df.columns else set()
     hash_to_id = dict(zip(display_df['_row_hash'], display_df['id'])) if '_row_hash' in display_df.columns and 'id' in display_df.columns else {}
             
@@ -651,8 +797,11 @@ with tab3:
         column_config={
             "id": None, # Ocultar coluna ID
             "_row_hash": None,  # Ocultar coluna hash
+            "dedup_idx": None, # Ocultar dedup_idx (se existir por cache)
             "amount": st.column_config.NumberColumn("Valor (R$)", format="R$ %.2f"),
             "date": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
+            "title": st.column_config.TextColumn("Descrição"),
+            "reference_date": st.column_config.DateColumn("Mês Ref.", format="DD/MM/YYYY"),
             "category": st.column_config.SelectboxColumn("Categoria", options=settings["categories"]),
             "owner": st.column_config.SelectboxColumn("Pessoa", options=["Pamela", "Renato", "Família"])
         },
@@ -938,107 +1087,70 @@ with tab4:
 
 # --- ABA 4: PLANEJAMENTO ---
 # --- ABA 5: PLANEJAMENTO ---
+# --- ABA 5: PLANEJAMENTO (METAS) ---
 with tab5:
-    st.header("🎯 Planejamento Mensal de Gastos")
-    st.markdown("Defina limites para suas categorias. **As metas agora são por mês!**")
+    st.header("🎯 Metas e Orçamentos (Tabela)")
+    st.markdown("Defina suas metas mensais ou anuais aqui. O sistema prioriza: **Meta do Mês/Ano** > **Meta Padrão (Mês 0)**.")
+    st.info("💡 **Dica**: Use Mês=0 e Ano=0 para definir a meta padrão da categoria (vale para todos os meses).")
     
-    # Seletor de Período para Metas
-    col_meta1, col_meta2 = st.columns(2)
-    with col_meta1:
-        meta_month = st.selectbox("Mês de Planejamento", list(months.keys()), format_func=lambda x: months[x], index=datetime.now().month-1, key="meta_month")
-    with col_meta2:
-        meta_year = st.number_input("Ano de Planejamento", 2024, 2030, datetime.now().year, key="meta_year")
-        
-    target_date = date(meta_year, meta_month, 1)
+    # Initialize DF if missing (Safety check)
+    if "budgets_df" not in st.session_state.settings:
+        st.session_state.settings["budgets_df"] = pd.DataFrame(columns=["Categoria", "Valor", "Mes", "Ano"])
     
-    # Carregar Orçamento (Considerando o Dono Selecionado)
-    current_budgets = utils.get_budgets_for_date(settings, target_date, owner=owner_filter)
+    # Preparar DataFrame para edição
+    current_df = st.session_state.settings["budgets_df"].copy()
     
-    active_categories = settings.get("categories", [])
-    budget_data = []
+    # Editor Tabela
+    edited_df = st.data_editor(
+        current_df,
+        num_rows="dynamic",
+        column_config={
+            "Categoria": st.column_config.SelectboxColumn(
+                "Categoria",
+                options=st.session_state.settings.get("categories", []),
+                required=True,
+                width="medium"
+            ),
+            "Valor": st.column_config.NumberColumn(
+                "Meta (R$)",
+                format="R$ %.2f",
+                min_value=0,
+                width="small"
+            ),
+            "Mes": st.column_config.NumberColumn(
+                "Mês",
+                help="1-12. Use 0 para 'Todos' (Padrão)",
+                min_value=0,
+                max_value=12,
+                step=1,
+                format="%d",
+                width="small"
+            ),
+            "Ano": st.column_config.NumberColumn(
+                "Ano",
+                help="Ex: 2026. Use 0 para 'Todos' (Padrão)",
+                min_value=0,
+                max_value=2030,
+                step=1,
+                format="%d",
+                width="small"
+            )
+        },
+        hide_index=True,
+        use_container_width=True,
+        key="budget_editor_global"
+    )
     
-    for cat in active_categories:
-        budget_data.append({
-            "Categoria": cat,
-            "Meta (R$)": float(current_budgets.get(cat, 0.0))
-        })
-        
-    budget_df = pd.DataFrame(budget_data)
-    
-    # --- NOVO: Adicionar Categoria Diretamente no Planejamento ---
-    with st.expander("➕ Adicionar Nova Categoria de Meta"):
-        new_cat_planning = st.text_input("Nome da Nova Categoria", key="new_cat_planning")
-        if st.button("Criar Categoria"):
-            if new_cat_planning and new_cat_planning not in settings["categories"]:
-                settings["categories"].append(new_cat_planning)
-                utils.save_settings(settings)
-                st.success(f"Categoria '{new_cat_planning}' criada! Agora defina a meta abaixo.")
+    col_save_meta, _ = st.columns([1, 4])
+    with col_save_meta:
+        if st.button("💾 Salvar Metas", type="primary"):
+            st.session_state.settings["budgets_df"] = edited_df
+            if utils.save_settings(st.session_state.settings):
+                st.toast("Metas salvas com sucesso no Google Sheets!", icon="✅")
+                time.sleep(1)
                 st.rerun()
-            elif new_cat_planning in settings["categories"]:
-                st.warning("Essa categoria já existe.")
-    # -------------------------------------------------------------
-    
-    # Permitir edição apenas se não for "Todos" (Agregado)
-    disable_editing = (owner_filter == "Todos")
-    
-    if disable_editing:
-        st.info("ℹ️ Selecione uma pessoa específica na barra lateral para **editar** as metas. No modo 'Todos', você vê a soma das metas de todos.")
-        st.dataframe(budget_df, use_container_width=True, hide_index=True)
-        edited_budget_df = budget_df # Apenas leitura
-    else:
-        edited_budget_df = st.data_editor(
-            budget_df,
-            column_config={
-                "Meta (R$)": st.column_config.NumberColumn("Meta Mensal (R$)", format="R$ %.2f")
-            },
-            use_container_width=True,
-            hide_index=True,
-            key=f"budget_editor_{meta_month}_{meta_year}_{owner_filter}"
-        )
-    
-        if st.button("💾 Salvar Metas deste Mês"):
-            new_budgets = dict(zip(edited_budget_df["Categoria"], edited_budget_df["Meta (R$)"]))
-            settings = utils.update_budget_for_date(settings, target_date, new_budgets, owner=owner_filter)
-            utils.save_settings(settings)
-            st.session_state.settings = settings
-            st.success(f"Metas de {owner_filter} para {months[meta_month]}/{meta_year} salvas!")
-            st.rerun()
-        
-    st.divider()
-    st.subheader("Acompanhamento das Metas")
-    
-    if not df.empty:
-        if not pd.api.types.is_datetime64_any_dtype(df['reference_date']):
-             df['reference_date'] = pd.to_datetime(df['reference_date'])
-             
-        mask_meta = (df['reference_date'].dt.month == meta_month) & (df['reference_date'].dt.year == meta_year) & (df['category'] != 'Pagamento/Crédito')
-        
-        # Filtro de Pessoa no Planejamento
-        # Se eu filtrar, vou comparar SÓ OS MEUS gastos com a Meta TOTAL? Ou Meta Proporcional?
-        # Por enquanto, compara Gasto Filtrado vs Meta Total (Usuário vê o quanto ELE consumiu da meta).
-        if owner_filter != "Todos":
-             if 'owner' not in df.columns: df['owner'] = "Família"
-             mask_meta = mask_meta & (df['owner'] == owner_filter)
-             st.caption(f"Exibindo gastos de: **{owner_filter}** comparados à meta do orçamento.")
-        else:
-             st.caption("Exibindo gastos **Totais da Família** comparados à meta.")
-        
-        spent_df = df[mask_meta].groupby('category')['amount'].sum()
-        
-        for index, row in edited_budget_df.iterrows():
-            cat = row['Categoria']
-            limit = row['Meta (R$)']
-            spent = spent_df.get(cat, 0.0)
-            
-            if limit > 0:
-                progress = max(0.0, min(spent / limit, 1.0))
-                st.write(f"**{cat}**: R$ {spent:,.2f} / R$ {limit:,.2f}")
-                st.progress(progress)
-                if spent >= limit:
-                    st.error(f"⚠️ Limite estourado em {cat}!")
             else:
-                 if spent > 0:
-                     st.write(f"**{cat}**: R$ {spent:,.2f} (Sem meta definida)")
+                st.error("Erro ao salvar metas na planilha Google Sheets.")
 
 # --- ABA 6: PROJEÇÕES ---
 with tab6:
@@ -1092,20 +1204,26 @@ with tab6:
         st.stop() # Interrompe a execução aqui para não dar erro lá embaixo
     
     # Se chegou aqui, temos dados!
-    # Prevenção de erro: Cria a coluna se não existir
-    df['ref_dt'] = pd.to_datetime(df['reference_date'])
+    # CORREÇÃO: Usar cópia local para não poluir o df global com 'ref_dt'
+    df_proj = df.copy()
     
-    mask_exp = (df['ref_dt'].dt.year == proj_year) & (df['category'] != 'Pagamento/Crédito') & (df['amount'] > 0)
+    # Prevenção de erro: Cria a coluna se não existir
+    if 'reference_date' in df_proj.columns:
+         df_proj['ref_dt'] = pd.to_datetime(df_proj['reference_date'])
+    else:
+         df_proj['ref_dt'] = pd.to_datetime(df_proj['date'])
+    
+    mask_exp = (df_proj['ref_dt'].dt.year == proj_year) & (df_proj['category'] != 'Pagamento/Crédito') & (df_proj['amount'] > 0)
     
     # Filtro opcional de dono
     if owner_filter != "Todos": 
-         if 'owner' not in df.columns: df['owner'] = "Família"
-         mask_exp = mask_exp & (df['owner'] == owner_filter)
+         if 'owner' not in df_proj.columns: df_proj['owner'] = "Família"
+         mask_exp = mask_exp & (df_proj['owner'] == owner_filter)
          st.caption(f"Fluxo de Caixa apenas de: **{owner_filter}**")
     else:
          st.caption("Fluxo de Caixa **Consolidado (Família)**")
 
-    expenses_grouped = df[mask_exp].groupby(df['ref_dt'].dt.month)['amount'].sum()
+    expenses_grouped = df_proj[mask_exp].groupby(df_proj['ref_dt'].dt.month)['amount'].sum()
     for m in expenses_grouped.index:
         real_expenses[m] = expenses_grouped[m]
 

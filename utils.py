@@ -52,98 +52,142 @@ DEFAULT_SETTINGS = {
 }
 
 def load_settings():
-    """Carrega configurações do Google Sheets (com fallback local)."""
-    try:
-        settings = gsheets.read_settings_from_sheet()
-        if settings:
-            return settings
-    except Exception as e:
-        print(f"Aviso: Erro ao ler settings do Google Sheets: {e}")
+    """Carrega configurações: Categorias e Metas (Tabular), Outros (JSON legacy)."""
+    settings = {}
     
-    # Fallback: tentar arquivo local
-    if os.path.exists(SETTINGS_FILE):
+    # 1. Carregar Legacy/Defaults (para income_sources e backup)
+    legacy = {}
+    try:
+        legacy = gsheets.read_settings_from_sheet() or {}
+    except:
+        pass
+        
+    if not legacy and os.path.exists(SETTINGS_FILE):
         try:
             with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                legacy = json.load(f)
         except:
             pass
+            
+    if not legacy:
+        legacy = DEFAULT_SETTINGS.copy()
+        
+    settings["income_sources"] = legacy.get("income_sources", DEFAULT_SETTINGS["income_sources"])
     
-    return DEFAULT_SETTINGS
+    # 2. Carregar Categorias (Tabular)
+    try:
+        cats = gsheets.read_categories()
+        if not cats: # Migração ou Falha na Leitura
+            print("--- Aviso: Tabela de Categorias vazia ou erro na leitura. Usando Legacy/Default. ---")
+            cats = legacy.get("categories", DEFAULT_SETTINGS["categories"])
+            # Tenta salvar para corrigir
+            try:
+                gsheets.save_categories(cats)
+            except:
+                pass
+        else:
+             print(f"--- Categorias Carregadas da Tabela: {len(cats)} itens ---")
+             
+        settings["categories"] = cats
+    except Exception as e:
+        print(f"ERRO CRÍTICO ao ler categorias tabular: {e}")
+        settings["categories"] = legacy.get("categories", DEFAULT_SETTINGS["categories"])
+        
+    # 3. Carregar Metas (Tabular)
+    try:
+        budgets_df = gsheets.read_budgets()
+        if budgets_df.empty: # Migração
+            print("--- Migrando Metas para Tabela ---")
+            # Converte dict 'default' para DF
+            default_budgets = legacy.get("budgets", {}).get("default", {})
+            rows = []
+            for cat, val in default_budgets.items():
+                rows.append({"Categoria": cat, "Valor": val, "Mes": 0, "Ano": 0})
+            
+            if rows:
+                budgets_df = pd.DataFrame(rows)
+            else:
+                budgets_df = pd.DataFrame(columns=["Categoria", "Valor", "Mes", "Ano"])
+                
+            gsheets.save_budgets(budgets_df)
+        else:
+             print(f"--- Metas Carregadas da Tabela: {len(budgets_df)} linhas ---")
+            
+        settings["budgets_df"] = budgets_df
+    except Exception as e:
+        print(f"ERRO CRÍTICO ao ler metas tabular: {e}")
+        settings["budgets_df"] = pd.DataFrame(columns=["Categoria", "Valor", "Mes", "Ano"])
+
+    print("--- Settings Tabulares Carregados (Categorias + Metas) ---")
+    return settings
 
 def save_settings(settings):
-    """Salva configurações no Google Sheets (e localmente como backup)."""
-    # Salvar no Google Sheets
-    try:
-        gsheets.write_settings_to_sheet(settings)
-    except Exception as e:
-        print(f"Erro ao salvar settings no Google Sheets: {e}")
+    """Salva configurações. Retorna True se sucesso, False se erro."""
+    success = True
     
+    # 1. Salvar Abas Novas
+    try:
+        gsheets.save_categories(settings.get("categories", []))
+        gsheets.save_budgets(settings.get("budgets_df", pd.DataFrame()))
+    except Exception as e:
+        print(f"ERRO ao salvar abas tabulares: {e}")
+        success = False
+        
+    # 2. Salvar Legacy (Income)
+    legacy_structure = {
+        "categories": settings.get("categories", []),
+        "income_sources": settings.get("income_sources", DEFAULT_SETTINGS["income_sources"]),
+        "budgets": {"default": {}} 
+    }
+    
+    try:
+        current_legacy = gsheets.read_settings_from_sheet() or {}
+        current_legacy["income_sources"] = settings.get("income_sources", DEFAULT_SETTINGS["income_sources"])
+        current_legacy["categories"] = settings.get("categories", [])
+        gsheets.write_settings_to_sheet(current_legacy)
+    except Exception as e:
+         print(f"Aviso: Erro ao salvar legacy JSON: {e}")
+         # Não marca como falha crítica se o tabular funcionou
+         
     # Backup local
     try:
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(settings, f, indent=4, ensure_ascii=False)
+            json.dump(legacy_structure, f, indent=4, ensure_ascii=False)
     except:
         pass
+        
+    return success
 
 def get_budgets_for_date(settings, target_date, owner=None):
-    """Retorna os orçamentos aplicáveis para uma data (Mês/Ano) e Pessoa."""
-    # Formato da chave de período: YYYY-MM ou YYYY-MM_Owner
+    """Retorna dict {Categoria: Valor} baseado no DataFrame de Metas (filtrando por Mês/Ano)."""
     if isinstance(target_date, (datetime, date)):
-        date_str = target_date.strftime("%Y-%m")
+        mes = target_date.month
+        ano = target_date.year
     else:
-        date_str = str(target_date)
-
-    all_budgets = settings.get("budgets", {})
-    
-    if owner and owner != "Todos":
-        keys_to_try = [f"{date_str}_{owner}", f"default_{owner}", f"{date_str}", "default"]
-    else:
-        keys_to_try = [date_str, "default"]
-
-    final_budget = {}
-    
-    if owner == "Todos":
-        base = all_budgets.get("default", {}).copy()
-        
-        merged_budget = {}
-        for cat in settings.get("categories", []):
-            merged_budget[cat] = 0.0
-            
-        found_any = False
-        for key, val in all_budgets.items():
-            if key.startswith(date_str):
-                found_any = True
-                for c, v in val.items():
-                    merged_budget[c] = merged_budget.get(c, 0.0) + v
-        
-        if not found_any:
-             return all_budgets.get("default", {})
+        # Se for string YYYY-MM
+        try:
+            parts = str(target_date).split('-')
+            ano = int(parts[0])
+            mes = int(parts[1])
+        except:
+             mes = 0
+             ano = 0
              
-        return merged_budget
-
-    # Caso Owner Específico
-    current_key = f"{date_str}_{owner}"
-    if current_key in all_budgets:
-        return all_budgets[current_key]
+    df = settings.get("budgets_df", pd.DataFrame())
+    if df.empty:
+        return {}
         
-    if f"default_{owner}" in all_budgets:
-        return all_budgets[f"default_{owner}"]
-        
-    return {c: 0.0 for c in settings.get("categories", [])}
-
-def update_budget_for_date(settings, target_date, new_budgets, owner=None):
-    """Atualiza o orçamento para um período e dono específicos."""
-    date_str = target_date.strftime("%Y-%m")
+    # 1. Metas Padrão (Mes=0, Ano=0)
+    defaults = df[(df["Mes"] == 0) & (df["Ano"] == 0)].set_index("Categoria")["Valor"].to_dict()
     
-    key = date_str
-    if owner and owner != "Todos":
-        key = f"{date_str}_{owner}"
+    # 2. Metas Específicas do Mês
+    specifics = df[(df["Mes"] == mes) & (df["Ano"] == ano)].set_index("Categoria")["Valor"].to_dict()
     
-    if "budgets" not in settings:
-        settings["budgets"] = {}
-        
-    settings["budgets"][key] = new_budgets
-    return settings
+    # Merge: Específicas sobrescrevem Padrão
+    final_budget = defaults.copy()
+    final_budget.update(specifics)
+    
+    return final_budget
 
 def load_data():
     """Carrega os dados da planilha Google Sheets ou cria um DataFrame vazio."""
@@ -157,17 +201,18 @@ def load_data():
         if 'date' in df.columns:
             df['date'] = pd.to_datetime(df['date'], format='mixed', errors='coerce').dt.date
         
+
         # Garantir coluna reference_date
         if 'reference_date' not in df.columns:
             if 'date' in df.columns:
                  df['reference_date'] = df['date']
         else:
              df['reference_date'] = pd.to_datetime(df['reference_date'], format='mixed', errors='coerce').dt.date
-        
+
         # Garantir coluna ID
         if 'id' not in df.columns:
-            df['dedup_idx'] = df.groupby(['date', 'title', 'amount']).cumcount()
-            df['id'] = df.apply(generate_id, axis=1)
+            # df['id'] = df.apply(generate_id, axis=1) # Lento
+            df['id'] = [str(uuid.uuid4()) for _ in range(len(df))]
                 
         # Garantir coluna owner
         if 'owner' not in df.columns:
@@ -177,24 +222,29 @@ def load_data():
         if 'amount' in df.columns:
             df['amount'] = pd.to_numeric(df['amount'], errors='coerce').fillna(0.0)
                 
+        if 'installment_info' in df.columns:
+            df = df.drop(columns=['installment_info'])
+            
         return df
     except Exception as e:
         print(f"Erro ao carregar dados do Google Sheets: {e}")
         return create_empty_dataframe()
 
-def generate_id(row):
+def generate_id(row=None):
     """Gera um ID único aleatório para permitir duplicatas manuais."""
     return str(uuid.uuid4())
 
 def create_empty_dataframe():
     """Cria um DataFrame vazio com as colunas esperadas."""
-    return pd.DataFrame(columns=['id', 'date', 'reference_date', 'title', 'amount', 'category', 'installment_info', 'owner'])
+    return pd.DataFrame(columns=['id', 'date', 'reference_date', 'title', 'amount', 'category', 'owner'])
+
 
 def save_data(df):
     """Salva o DataFrame na planilha Google Sheets."""
     # Garantir que não salvamos colunas auxiliares
-    if 'dedup_idx' in df.columns:
-        df = df.drop(columns=['dedup_idx'])
+    # Garantir que não salvamos colunas auxiliares
+    # dedup_idx removido do código
+
     
     gsheets.write_dataframe_to_sheet(df, gsheets.BASE_FINANCEIRA_ID)
 
@@ -304,12 +354,7 @@ def categorize_transaction(title):
         
     return 'Outros'
 
-def extract_installment_info(title):
-    """Detecta informações de parcelamento no título (ex: Parcela 2/10)."""
-    match = re.search(r'Parcela\s+(\d+)/(\d+)', title, re.IGNORECASE)
-    if match:
-        return match.group(0) # Retorna "Parcela X/Y"
-    return None
+
 
 import re
 
@@ -378,24 +423,76 @@ def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
         # 1. Ler arquivo
         try:
             df = pd.read_csv(uploaded_file)
+            if len(df.columns) < 2:
+                # Se detectou só 1 coluna, provavelmente o separador é ;
+                raise ValueError("Separador inválido")
         except:
             uploaded_file.seek(0)
-            df = pd.read_csv(uploaded_file, sep=';', encoding='latin1')
+            try:
+                # Tentar UTF-8 primeiro (NuBank usa UTF-8)
+                # encoding_errors='replace' evita que um byte inválido force o fallback para Latin1 (que leria errado)
+                df = pd.read_csv(uploaded_file, sep=';', encoding='utf-8', encoding_errors='replace')
+            except:
+                # Fallback para Latin1 (Bancos antigos)
+                uploaded_file.seek(0)
+                df = pd.read_csv(uploaded_file, sep=';', encoding='latin1')
             
-        # Normalizar colunas
+        # --- Detecção de Headerless (Sem Cabeçalho) ---
+        # Se a "primeira linha" (que virou header) parecer dados (ex: datas), recarregar sem header
+        first_row_str = " ".join([str(c) for c in df.columns])
+        
+        # Procura padrão de data (DD/MM/YYYY ou YYYY-MM-DD) no header
+        if re.search(r'\d{2}/\d{2}/\d{4}', first_row_str) or re.search(r'\d{4}-\d{2}-\d{2}', first_row_str):
+             uploaded_file.seek(0)
+             try:
+                # Heurística de Separador: Ler primeira linha e contar ; vs ,
+                sample_line = uploaded_file.read(2048).decode('latin1', errors='ignore').splitlines()[0]
+                uploaded_file.seek(0)
+                
+                sep_candidate = ','
+                if sample_line.count(';') >= sample_line.count(','):
+                    sep_candidate = ';'
+                
+                df = pd.read_csv(uploaded_file, header=None, sep=sep_candidate, encoding='latin1')
+             except:
+                uploaded_file.seek(0)
+                # Fallback: Tentar detectar automagicamente
+                df = pd.read_csv(uploaded_file, header=None, sep=None, engine='python', encoding='latin1')
+        
+        # Normalizar colunas (mesmo que sejam int 0, 1, 2 vira '0', '1', '2')
         df.columns = [str(c).lower().strip() for c in df.columns]
         
         col_map = {}
         
         # 2. Identificar Data
         date_cols = [c for c in df.columns if any(k in c for k in ['data', 'date', 'dia', 'dt'])]
-        if not date_cols: return None, "Coluna de Data não encontrada."
-        col_map['date'] = date_cols[0]
+        
+        if date_cols:
+            col_map['date'] = date_cols[0]
+        else:
+            # Fallback: tentar primeira coluna se parecer data
+            if '0' in df.columns: # Heurística: Coluna 0 costuma ser Data
+                 sample_date = str(df['0'].iloc[0])
+                 if re.search(r'\d{2}/\d{2}|\d{4}-\d{2}', sample_date):
+                     col_map['date'] = '0'
+            
+            if 'date' not in col_map:
+                # Tentar encontrar coluna com datas via amostragem
+                for col in df.columns:
+                     if df[col].astype(str).str.contains(r'\d{2}/\d{2}/\d{4}').head(5).any():
+                         col_map['date'] = col
+                         break
+                         
+        if 'date' not in col_map: return None, "Coluna de Data não encontrada."
         
         # 3. Identificar Descrição
         title_cols = [c for c in df.columns if any(k in c for k in ['descri', 'title', 'historico', 'hist', 'estab', 'loja', 'nome', 'lançamento', 'lancamento'])]
-        if not title_cols: return None, "Coluna de Descrição não encontrada."
-        col_map['title'] = title_cols[0]
+        if not title_cols:
+             # Fallback: Coluna 1 costuma ser Descrição
+             if '1' in df.columns: col_map['title'] = '1'
+             else: return None, "Coluna de Descrição não encontrada."
+        else:
+            col_map['title'] = title_cols[0]
         
         # 4. Identificar Valor (Smart Detection)
         # Em vez de confiar só no nome, vamos testar o conteúdo
@@ -409,6 +506,9 @@ def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
         best_col = None
         
         for col in df.columns:
+            # Ignorar coluna de data já mapeada
+            if col == col_map.get('date'): continue
+            
             # Tentar converter amostra
             sample = df[col].astype(str).head(20).apply(clean_amount_str)
             valid_ratio = sample.notna().mean()
@@ -419,6 +519,8 @@ def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
                 if col in name_candidates: score += 0.2
                 # Se tiver negativos, é forte indício de extrato
                 if (sample.dropna() < 0).any(): score += 0.1
+                # Se for coluna 2 ou 3 (comum em extratos sem header)
+                if col in ['2', '3']: score += 0.15
                 
                 if score > max_valid_ratio:
                     max_valid_ratio = score
@@ -464,6 +566,10 @@ def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
                 income_rows['type'] = 'Extra'
                 income_rows['recurrence'] = 'Única'
                 income_rows['owner'] = owner
+                
+                # Remover coluna 'title' para evitar duplicação visual e no banco
+                income_rows = income_rows.drop(columns=['title'])
+                
                 income_data = income_rows
             
             # Processar Despesas (converter para positivo)
@@ -480,7 +586,7 @@ def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
         final_expenses = pd.DataFrame()
         if hasattr(expenses_data, 'empty') and not expenses_data.empty:
             expenses_data['category'] = expenses_data['title'].apply(categorize_transaction)
-            expenses_data['installment_info'] = expenses_data['title'].apply(extract_installment_info)
+
             if reference_date:
                 expenses_data['reference_date'] = reference_date
             else:
@@ -488,9 +594,11 @@ def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
             expenses_data['owner'] = owner
             
             # Deduplicação Intra-Arquivo
+
             expenses_data = expenses_data.sort_values(by=['date', 'title', 'amount'])
-            expenses_data['dedup_idx'] = expenses_data.groupby(['date', 'title', 'amount']).cumcount()
-            expenses_data['id'] = expenses_data.apply(generate_id, axis=1)
+
+            # expenses_data['dedup_idx'] = ... # Removido
+            expenses_data['id'] = [str(uuid.uuid4()) for _ in range(len(expenses_data))]
             final_expenses = expenses_data
             
         return {

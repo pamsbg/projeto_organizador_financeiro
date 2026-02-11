@@ -82,19 +82,52 @@ def get_gspread_client():
     client = gspread.authorize(creds)
     return client
 
+import time
+from functools import wraps
+from gspread.exceptions import APIError
 
+def retry_on_quota(max_retries=5, initial_delay=2):
+    """
+    Decorator para tentar novamente em caso de erro de cota (429).
+    Backoff exponencial: 2s, 4s, 8s, 16s, 32s.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            delay = initial_delay
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except APIError as e:
+                    # Verifica se é erro 429 (Too Many Requests)
+                    # gspread APIError tem response.status_code? O erro impresso mostra [429]
+                    is_429 = False
+                    if hasattr(e, 'response') and hasattr(e.response, 'status_code') and e.response.status_code == 429:
+                        is_429 = True
+                    # Às vezes o status code vem no args[0]
+                    if not is_429 and '429' in str(e):
+                        is_429 = True
+                        
+                    if is_429:
+                        if attempt == max_retries - 1:
+                            st.error("⚠️ O Google Sheets está sobrecarregado (Muitas requisições). Tente novamente em 1 minuto.")
+                            raise
+                        
+                        st.toast(f"⏳ Cota do Google atingida. Aguardando {delay}s para tentar novamente... ({attempt+1}/{max_retries})")
+                        time.sleep(delay)
+                        delay *= 2
+                    else:
+                        raise
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+@retry_on_quota()
 def read_sheet_as_dataframe(spreadsheet_id, sheet_index=0):
     """
     Lê todos os dados de uma aba (worksheet) de uma planilha Google Sheets
     e retorna como pandas DataFrame.
-    
-    Args:
-        spreadsheet_id: ID da planilha no Google Drive
-        sheet_index: Índice da aba (0 = primeira aba)
-    
-    Returns:
-        pd.DataFrame com os dados da planilha. 
-        DataFrame vazio se a planilha estiver vazia.
     """
     client = get_gspread_client()
     spreadsheet = client.open_by_key(spreadsheet_id)
@@ -111,15 +144,11 @@ def read_sheet_as_dataframe(spreadsheet_id, sheet_index=0):
     return pd.DataFrame(records)
 
 
+@retry_on_quota()
 def write_dataframe_to_sheet(df, spreadsheet_id, sheet_index=0):
     """
     Sobrescreve uma aba (worksheet) com o conteúdo de um DataFrame.
     Limpa a aba e escreve header + dados.
-    
-    Args:
-        df: pandas DataFrame para escrever
-        spreadsheet_id: ID da planilha no Google Drive
-        sheet_index: Índice da aba (0 = primeira aba)
     """
     client = get_gspread_client()
     spreadsheet = client.open_by_key(spreadsheet_id)
@@ -145,17 +174,18 @@ def write_dataframe_to_sheet(df, spreadsheet_id, sheet_index=0):
     worksheet.update(data, value_input_option="RAW")
 
 
-def read_settings_from_sheet(spreadsheet_id=SETTINGS_ID, sheet_index=0):
+@retry_on_quota()
+def read_settings_from_sheet(spreadsheet_id=SETTINGS_ID):
     """
-    Lê as configurações (settings) de uma planilha Google Sheets.
-    A planilha deve ter uma única célula A1 contendo o JSON das settings.
-    
-    Returns:
-        dict com as configurações
+    Lê as configurações (settings) da aba 'Settings' (JSON Legacy).
     """
     client = get_gspread_client()
     spreadsheet = client.open_by_key(spreadsheet_id)
-    worksheet = spreadsheet.get_worksheet(sheet_index)
+    
+    try:
+        worksheet = spreadsheet.worksheet("Settings")
+    except gspread.WorksheetNotFound:
+        return None
     
     # Settings são armazenadas como JSON na célula A1
     cell_value = worksheet.acell("A1").value
@@ -166,20 +196,97 @@ def read_settings_from_sheet(spreadsheet_id=SETTINGS_ID, sheet_index=0):
             return None
     return None
 
-
-def write_settings_to_sheet(settings_dict, spreadsheet_id=SETTINGS_ID, sheet_index=0):
+@retry_on_quota()
+def write_settings_to_sheet(settings_dict, spreadsheet_id=SETTINGS_ID):
     """
-    Salva as configurações (settings) em uma planilha Google Sheets.
-    Escreve o JSON na célula A1.
-    
-    Args:
-        settings_dict: dicionário de configurações
+    Salva as configurações (settings) na aba 'Settings'.
     """
     client = get_gspread_client()
     spreadsheet = client.open_by_key(spreadsheet_id)
-    worksheet = spreadsheet.get_worksheet(sheet_index)
+    worksheet = _get_or_create_worksheet(spreadsheet, "Settings")
     
     # Limpar e escrever JSON
     worksheet.clear()
     json_str = json.dumps(settings_dict, indent=2, ensure_ascii=False)
     worksheet.update_acell("A1", json_str)
+
+
+def _get_or_create_worksheet(spreadsheet, title, rows=100, cols=20):
+    """Retorna a worksheet pelo título, criando-a se não existir."""
+    try:
+        return spreadsheet.worksheet(title)
+    except gspread.WorksheetNotFound:
+        return spreadsheet.add_worksheet(title=title, rows=rows, cols=cols)
+
+@retry_on_quota()
+def read_categories(spreadsheet_id=SETTINGS_ID):
+    """Lê a lista de categorias da aba 'Categorias'."""
+    client = get_gspread_client()
+    spreadsheet = client.open_by_key(spreadsheet_id)
+    ws = _get_or_create_worksheet(spreadsheet, "Categorias")
+    
+    # Lê coluna A (pula header se houver, mas vamos assumir lista simples ou com header 'Categoria')
+    vals = ws.col_values(1)
+    if not vals:
+        return []
+    
+    if vals[0] == "Categoria":
+        vals = vals[1:]
+    
+    # Remove vazios e duplicatas, mantém ordem alfabética
+    cats = sorted(list({c.strip() for c in vals if c.strip()}))
+    return cats
+
+@retry_on_quota()
+def save_categories(categories_list, spreadsheet_id=SETTINGS_ID):
+    """Salva a lista de categorias na aba 'Categorias'."""
+    client = get_gspread_client()
+    spreadsheet = client.open_by_key(spreadsheet_id)
+    ws = _get_or_create_worksheet(spreadsheet, "Categorias")
+    
+    ws.clear()
+    data = [["Categoria"]] + [[c] for c in categories_list]
+    ws.update(data, value_input_option="RAW")
+
+@retry_on_quota()
+def read_budgets(spreadsheet_id=SETTINGS_ID):
+    """Lê a tabela de metas da aba 'Metas'."""
+    client = get_gspread_client()
+    spreadsheet = client.open_by_key(spreadsheet_id)
+    ws = _get_or_create_worksheet(spreadsheet, "Metas")
+    
+    records = ws.get_all_records()
+    if not records:
+        return pd.DataFrame(columns=["Categoria", "Valor", "Mes", "Ano"])
+    
+    df = pd.DataFrame(records)
+    # Garantir colunas
+    expected_cols = ["Categoria", "Valor", "Mes", "Ano"]
+    for col in expected_cols:
+        if col not in df.columns:
+            df[col] = 0 if col in ["Valor", "Mes", "Ano"] else ""
+            
+    return df[expected_cols]
+
+@retry_on_quota()
+def save_budgets(df, spreadsheet_id=SETTINGS_ID):
+    """Salva o DataFrame de metas na aba 'Metas'."""
+    client = get_gspread_client()
+    spreadsheet = client.open_by_key(spreadsheet_id)
+    ws = _get_or_create_worksheet(spreadsheet, "Metas")
+    
+    ws.clear()
+    if df.empty:
+        ws.update([["Categoria", "Valor", "Mes", "Ano"]], value_input_option="RAW")
+        return
+
+    # Converter para lista de listas
+    df_save = df.copy()
+    # Tratamento de tipos
+    df_save["Valor"] = df_save["Valor"].fillna(0.0).astype(float)
+    df_save["Mes"] = df_save["Mes"].fillna(0).astype(int)
+    df_save["Ano"] = df_save["Ano"].fillna(0).astype(int)
+    
+    data = [df_save.columns.tolist()] + df_save.values.tolist()
+    ws.update(data, value_input_option="RAW")
+
