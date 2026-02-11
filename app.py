@@ -1151,6 +1151,154 @@ with tab5:
                 st.rerun()
             else:
                 st.error("Erro ao salvar metas na planilha Google Sheets.")
+    
+    st.divider()
+
+    # --- DASHBOARD DE ACOMPANHAMENTO (VISUAL) ---
+    st.subheader("📊 Visualização Gráfica")
+    st.markdown("Filtre o gráfico abaixo para comparar Meta vs Realizado.")
+
+    # Filtros do GRÁFICO
+    col_gf1, col_gf2, col_gf3 = st.columns([1, 1, 2])
+    with col_gf1:
+        mon_dash_opts = {1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 5: "Maio", 6: "Junho", 
+                        7: "Julho", 8: "Agosto", 9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"}
+        sel_mon_graph = st.selectbox("Mês (Gráfico)", list(mon_dash_opts.keys()), format_func=lambda x: mon_dash_opts[x], index=datetime.now().month-1, key="graph_meta_month")
+    
+    with col_gf2:
+        sel_year_graph = st.selectbox("Ano (Gráfico)", range(2024, 2031), index=datetime.now().year-2024, key="graph_meta_year")
+        
+    with col_gf3:
+        sel_cats_graph = st.multiselect("Categorias (Gráfico)", settings.get("categories", []), key="graph_meta_cats")
+
+    # Calcular Comparativo (Gráfico)
+    target_date_graph = date(sel_year_graph, sel_mon_graph, 1)
+    monthly_budgets_graph = utils.get_budgets_for_date(st.session_state.settings, target_date_graph)
+    
+    # 2. Gastos Reais (Gráfico)
+    real_series_graph = pd.Series()
+    if not df.empty:
+        df_g = df.copy()
+        if 'date' in df_g.columns: df_g['date'] = pd.to_datetime(df_g['date'], errors='coerce')
+        mask_g = (df_g['date'].dt.month == sel_mon_graph) & (df_g['date'].dt.year == sel_year_graph)
+        if owner_filter != "Todos" and 'owner' in df_g.columns: mask_g = mask_g & (df_g['owner'] == owner_filter)
+        if sel_cats_graph: mask_g = mask_g & (df_g['category'].isin(sel_cats_graph))
+        real_series_graph = df_g[mask_g].groupby('category')['amount'].sum()
+
+    # 3. Cruzar Dados (Gráfico)
+    all_cats_graph = set(monthly_budgets_graph.keys()) | set(real_series_graph.index)
+    if sel_cats_graph:
+        all_cats_graph = all_cats_graph.intersection(set(sel_cats_graph))
+
+    data_graph = []
+    for cat in all_cats_graph:
+        meta_val = monthly_budgets_graph.get(cat, 0.0)
+        real_val = real_series_graph.get(cat, 0.0)
+        data_graph.append({"Categoria": cat, "Meta": meta_val, "Realizado": real_val})
+    
+    if data_graph:
+        df_graph_data = pd.DataFrame(data_graph)
+        fig_bar = px.bar(
+            df_graph_data, 
+            x="Categoria", 
+            y=["Realizado", "Meta"], 
+            barmode="group",
+            title=f"Meta vs Realizado - {mon_dash_opts[sel_mon_graph]}/{sel_year_graph}",
+            color_discrete_map={"Realizado": "#e74c3c", "Meta": "#2ecc71"}
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+    else:
+        st.info("Sem dados para o gráfico com os filtros selecionados.")
+        
+    st.divider()
+    
+    # --- DASHBOARD DE ACOMPANHAMENTO (TABELA) ---
+    st.subheader("📋 Tabela Detalhada")
+    st.markdown("Analise os número exatos.")
+
+    # Filtros da TABELA
+    col_tf1, col_tf2, col_tf3 = st.columns([1, 1, 2])
+    with col_tf1:
+        sel_mon_table = st.selectbox("Mês (Tabela)", list(mon_dash_opts.keys()), format_func=lambda x: mon_dash_opts[x], index=datetime.now().month-1, key="table_meta_month")
+    
+    with col_tf2:
+        sel_year_table = st.selectbox("Ano (Tabela)", range(2024, 2031), index=datetime.now().year-2024, key="table_meta_year")
+        
+    with col_tf3:
+        sel_cats_table = st.multiselect("Categorias (Tabela)", settings.get("categories", []), key="table_meta_cats")
+
+    # Calcular Comparativo (Tabela)
+    target_date_table = date(sel_year_table, sel_mon_table, 1)
+    monthly_budgets_table = utils.get_budgets_for_date(st.session_state.settings, target_date_table)
+    
+    # 2. Gastos Reais (Tabela)
+    real_series_table = pd.Series()
+    if not df.empty:
+        df_t = df.copy()
+        if 'date' in df_t.columns: df_t['date'] = pd.to_datetime(df_t['date'], errors='coerce')
+        mask_t = (df_t['date'].dt.month == sel_mon_table) & (df_t['date'].dt.year == sel_year_table)
+        if owner_filter != "Todos" and 'owner' in df_t.columns: mask_t = mask_t & (df_t['owner'] == owner_filter)
+        if sel_cats_table: mask_t = mask_t & (df_t['category'].isin(sel_cats_table))
+        real_series_table = df_t[mask_t].groupby('category')['amount'].sum()
+
+    # 3. Cruzar Dados (Tabela)
+    all_cats_table = set(monthly_budgets_table.keys()) | set(real_series_table.index)
+    if sel_cats_table:
+        all_cats_table = all_cats_table.intersection(set(sel_cats_table))
+        
+    data_table = []
+    for cat in all_cats_table:
+        meta_val = monthly_budgets_table.get(cat, 0.0)
+        real_val = real_series_table.get(cat, 0.0)
+        diff = meta_val - real_val
+        pct = (real_val / meta_val * 100) if meta_val > 0 else (100 if real_val > 0 else 0)
+        
+        status = "🟢 Dentro"
+        if real_val > meta_val:
+            status = "🔴 Estourou"
+        elif real_val > meta_val * 0.9:
+            status = "🟡 Alerta"
+            
+        data_table.append({
+            "Categoria": cat,
+            "Meta": meta_val,
+            "Realizado": real_val,
+            "Disponível": diff,
+            "% Uso": pct,
+            "Status": status
+        })
+    
+    if data_table:
+        df_table_comp = pd.DataFrame(data_table).sort_values(by="% Uso", ascending=False)
+        
+        # Métricas Globais (Da Tabela Filtrada)
+        total_meta_t = df_table_comp["Meta"].sum()
+        total_real_t = df_table_comp["Realizado"].sum()
+        total_diff_t = total_meta_t - total_real_t
+        
+        col_tm1, col_tm2, col_tm3 = st.columns(3)
+        col_tm1.metric("Orçamento (Filtrado)", f"R$ {total_meta_t:,.2f}")
+        col_tm2.metric("Gasto (Filtrado)", f"R$ {total_real_t:,.2f}", delta=f"{-total_real_t:,.2f}", delta_color="inverse")
+        col_tm3.metric("Saldo (Filtrado)", f"R$ {total_diff_t:,.2f}", delta=f"{total_diff_t:,.2f}", delta_color="normal")
+        
+        # Tabela Detalhada (Sem barra de progresso, apenas número formatado)
+        st.dataframe(
+            df_table_comp,
+            column_config={
+                "Meta": st.column_config.NumberColumn(format="R$ %.2f"),
+                "Realizado": st.column_config.NumberColumn(format="R$ %.2f"),
+                "Disponível": st.column_config.NumberColumn(format="R$ %.2f"),
+                "% Uso": st.column_config.NumberColumn(
+                    "% Utilizado",
+                    format="%.1f%%"
+                ),
+                "Status": st.column_config.TextColumn("Status")
+            },
+            hide_index=True,
+            use_container_width=True
+        )
+    else:
+        st.info("Sem dados para a tabela com os filtros selecionados.")
 
 # --- ABA 6: PROJEÇÕES ---
 with tab6:
