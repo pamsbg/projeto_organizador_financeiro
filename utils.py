@@ -177,16 +177,26 @@ def get_budgets_for_date(settings, target_date, owner=None):
     if df.empty:
         return {}
         
+    # Garantir que coluna Tipo exista antes de selecionar
+    if 'Tipo' not in df.columns:
+        df['Tipo'] = 'Orçamento'
+
     # 1. Metas Padrão (Mes=0, Ano=0)
-    defaults = df[(df["Mes"] == 0) & (df["Ano"] == 0)].set_index("Categoria")["Valor"].to_dict()
+    defaults = df[(df["Mes"] == 0) & (df["Ano"] == 0)].set_index("Categoria")[["Valor", "Tipo"]].to_dict('index')
     
     # 2. Metas Específicas do Mês
-    specifics = df[(df["Mes"] == mes) & (df["Ano"] == ano)].set_index("Categoria")["Valor"].to_dict()
+    specifics = df[(df["Mes"] == mes) & (df["Ano"] == ano)].set_index("Categoria")[["Valor", "Tipo"]].to_dict('index')
     
     # Merge: Específicas sobrescrevem Padrão
     final_budget = defaults.copy()
     final_budget.update(specifics)
     
+    # Normalizar saída: {Cat: {'Valor': X, 'Tipo': Y}}
+    # Se algum não tiver Tipo, usar Orçamento
+    for cat in final_budget:
+        if 'Tipo' not in final_budget[cat]:
+            final_budget[cat]['Tipo'] = 'Orçamento'
+            
     return final_budget
 
 def load_data():
@@ -258,6 +268,13 @@ def load_income_data():
         
         if 'date' in df.columns:
             df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
+
+        # Garante coluna reference_date
+        if 'reference_date' not in df.columns:
+             if 'date' in df.columns:
+                 df['reference_date'] = df['date']
+        else:
+             df['reference_date'] = pd.to_datetime(df['reference_date'], errors='coerce').dt.date
         
         # Garante coluna owner
         if 'owner' not in df.columns:
@@ -281,7 +298,7 @@ def load_income_data():
 
 def _create_empty_income_df():
     """Cria DataFrame vazio de receitas com tipos corretos."""
-    df = pd.DataFrame(columns=['date', 'source', 'amount', 'type', 'recurrence', 'owner'])
+    df = pd.DataFrame(columns=['date', 'reference_date', 'source', 'amount', 'type', 'recurrence', 'owner'])
     df['source'] = df['source'].astype(str)
     df['type'] = df['type'].astype(str)
     df['recurrence'] = df['recurrence'].astype(str)
@@ -570,6 +587,12 @@ def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
                 # Remover coluna 'title' para evitar duplicação visual e no banco
                 income_rows = income_rows.drop(columns=['title'])
                 
+                # Definir reference_date para Receitas também
+                if reference_date:
+                    income_rows['reference_date'] = reference_date
+                else:
+                    income_rows['reference_date'] = income_rows['date']
+
                 income_data = income_rows
             
             # Processar Despesas (converter para positivo)
@@ -633,7 +656,9 @@ def merge_and_save_income(current_income, new_income):
 
     # Gerar ID temporário para deduplicação (hash de campos chave)
     def get_hash(row):
-        return hash((str(row['date']), str(row['source']), str(row['amount']), str(row['owner'])))
+        # Hash inclui reference_date se existir, senão usa date como proxy
+        ref = str(row.get('reference_date', ''))
+        return hash((str(row['date']), str(row['source']), str(row['amount']), str(row['owner']), ref))
     
     if not current_income.empty:
         current_hashes = set(current_income.apply(get_hash, axis=1))

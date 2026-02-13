@@ -261,10 +261,14 @@ def read_budgets(spreadsheet_id=SETTINGS_ID):
     
     df = pd.DataFrame(records)
     # Garantir colunas
-    expected_cols = ["Categoria", "Valor", "Mes", "Ano"]
+    expected_cols = ["Categoria", "Valor", "Mes", "Ano", "Tipo"]
     for col in expected_cols:
         if col not in df.columns:
-            df[col] = 0 if col in ["Valor", "Mes", "Ano"] else ""
+            if col == "Valor":val = 0.0
+            elif col in ["Mes", "Ano"]: val = 0
+            elif col == "Tipo": val = "Orçamento"
+            else: val = ""
+            df[col] = val
             
     return df[expected_cols]
 
@@ -277,15 +281,18 @@ def save_budgets(df, spreadsheet_id=SETTINGS_ID):
     
     ws.clear()
     if df.empty:
-        ws.update([["Categoria", "Valor", "Mes", "Ano"]], value_input_option="RAW")
+        ws.update([["Categoria", "Valor", "Mes", "Ano", "Tipo"]], value_input_option="RAW")
         return
 
     # Converter para lista de listas
     df_save = df.copy()
     # Tratamento de tipos
+    if "Tipo" not in df_save.columns: df_save["Tipo"] = "Orçamento"
+    
     df_save["Valor"] = df_save["Valor"].fillna(0.0).astype(float)
     df_save["Mes"] = df_save["Mes"].fillna(0).astype(int)
     df_save["Ano"] = df_save["Ano"].fillna(0).astype(int)
+    df_save["Tipo"] = df_save["Tipo"].fillna("Orçamento").astype(str)
     
     data = [df_save.columns.tolist()] + df_save.values.tolist()
     ws.update(data, value_input_option="RAW")
