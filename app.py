@@ -7,6 +7,8 @@ import utils
 import utils
 import os
 import time
+import ml_patterns
+import gsheets
 
 # Configuração da Página
 st.set_page_config(page_title="Organizador Financeiro", layout="wide", page_icon="💰")
@@ -68,8 +70,76 @@ if not check_password():
 
 # --- FIM DO LOGIN ---
 
-# Título Principal
-st.title("💰 Organizador Financeiro Família Guerra Possa")
+# --- PRIVACY MODE ---
+if "privacy_mode" not in st.session_state:
+    st.session_state.privacy_mode = False
+
+def toggle_privacy():
+    st.session_state.privacy_mode = not st.session_state.privacy_mode
+
+# Injetar CSS de Borrão se ativado
+if st.session_state.privacy_mode:
+    st.markdown("""
+        <style>
+            /* Borrar APENAS os valores das métricas (stMetric) */
+            div[data-testid="stMetricValue"] { filter: blur(10px) !important; transition: filter 0.3s; }
+            /* Remover blur genérico de tabelas/gráficos que estava borrando textos */
+        </style>
+    """, unsafe_allow_html=True)
+
+def get_privacy_data(df_to_mask):
+    """
+    Retorna uma cópia do DataFrame com valores numéricos mascarados se o modo privado estiver ativo.
+    Máscara APENAS colunas monetárias/sensíveis.
+    """
+    if not st.session_state.privacy_mode or df_to_mask.empty:
+        return df_to_mask
+    
+    masked_df = df_to_mask.copy()
+    
+    # Lista de termos que INDICAM valor financeiro (Case Insensitive)
+    monetary_keywords = ['valor', 'amount', 'total', 'meta', 'realizado', 'diferença', 'saldo', 'entrada', 'saída', 'receita', 'despesa', 'gasto', 'r$', 'balance']
+    
+    # Lista de termos para EXCLUIR explicitamente (Case Insensitive)
+    exclude_keywords = ['ano', 'mês', 'dia', 'data', 'percent', '%', 'qtd', 'quantidade', 'id', 'idx', 'hash', 'code', 'score', 'nota', 'parcela', 'tipo']
+    
+    target_cols = []
+    
+    for col in masked_df.columns:
+        col_lower = str(col).lower()
+        
+        # 1. Verificar se é exclúido
+        if any(ex in col_lower for ex in exclude_keywords):
+            continue
+            
+        # 2. Verificar se é numérico
+        is_numeric = pd.api.types.is_numeric_dtype(masked_df[col])
+        
+        # 3. Se for numérico E tiver palavra-chave monetária, mascara
+        if is_numeric:
+            if any(mon in col_lower for mon in monetary_keywords):
+                target_cols.append(col)
+                
+        # 4. Se não for numérico mas o nome for MUITO forte (ex: "Valor (R$)"), mascara também
+        # (Streamlit às vezes formata como string antes)
+        elif any(mon in col_lower for mon in monetary_keywords):
+             target_cols.append(col)
+
+    # Aplicar máscara
+    for col in target_cols:
+        masked_df[col] = "****"
+        
+    return masked_df
+
+# Título Principal com Botão de Privacidade
+col_title, col_privacy = st.columns([0.9, 0.1])
+with col_title:
+    st.title("💰 Organizador Financeiro Família Guerra Possa")
+with col_privacy:
+    # Botão de Olho
+    eye_icon = "🙈" if st.session_state.privacy_mode else "👁️"
+    if st.button(eye_icon, key="privacy_toggle", help="Ocultar/Exibir Valores", on_click=toggle_privacy):
+        pass # Ação feita no on_click (rerun automático)
 
 # Carregar Dados
 if 'df' not in st.session_state:
@@ -99,6 +169,21 @@ with st.sidebar:
         st.session_state.df = utils.load_data()
         st.session_state.income_df = utils.load_income_data()
         st.session_state.settings = utils.load_settings()
+        
+        # Regenerar dados líquidos
+        try:
+            rec_liq = utils.compute_receitas_liquidas(
+                st.session_state.income_df, st.session_state.df, st.session_state.settings
+            )
+            utils.save_receitas_liquidas(rec_liq)
+            
+            trans_liq = utils.compute_transacoes_liquidas(
+                st.session_state.df, st.session_state.settings
+            )
+            utils.save_transacoes_liquidas(trans_liq)
+        except Exception as e:
+            st.warning(f"⚠️ Erro ao gerar dados líquidos: {e}")
+        
         st.session_state.just_refreshed = True
         st.rerun()
 
@@ -120,8 +205,59 @@ with st.sidebar:
     
     # Exibir Totais
     col_kpi1, col_kpi2 = st.columns(2)
-    col_kpi1.metric("Transações", filtered_trans_count)
-    col_kpi2.metric("Receitas", filtered_income_count)
+    
+    # Excluir Aplicações contagem de Transações
+    filtered_trans_count_kpi = filtered_trans_count
+    if not df.empty:
+        meta_cats_kpi = utils.get_meta_categories(settings)
+        mask_kpi = pd.Series(True, index=df.index)
+        if owner_filter != "Todos" and 'owner' in df.columns:
+            mask_kpi &= (df['owner'] == owner_filter)
+        
+        cond_meta_kpi = df['category'].isin(meta_cats_kpi) if meta_cats_kpi else pd.Series(False, index=df.index)
+        cond_title_kpi = df['title'].astype(str).str.contains('aplica', case=False, na=False)
+        
+        mask_kpi &= ~(cond_meta_kpi | cond_title_kpi)
+        filtered_trans_count_kpi = len(df[mask_kpi])
+            
+    val_trans = filtered_trans_count_kpi
+    
+    # Calcular contagem de Receitas na Sidebar (exclui resgates individuais, +1 se houver rendimento)
+    filtered_income_net_count = 0
+    
+    if not income_df.empty:
+        inc_for_count = income_df.copy()
+        if owner_filter != "Todos" and 'owner' in inc_for_count.columns:
+            inc_for_count = inc_for_count[inc_for_count['owner'] == owner_filter]
+        
+        # Contar receitas excluindo resgates individuais
+        non_resgates = inc_for_count[~inc_for_count['source'].astype(str).str.contains('resgate', case=False, na=False)]
+        filtered_income_net_count = len(non_resgates)
+        
+        # Calcular se há rendimento líquido para adicionar +1 na contagem
+        total_resgatado_sb = inc_for_count[inc_for_count['source'].astype(str).str.contains('resgate', case=False, na=False)]['amount'].sum()
+        
+        total_aplicado_sb = 0
+        if not df.empty:
+            df_sb = df.copy()
+            if owner_filter != "Todos" and 'owner' in df_sb.columns:
+                df_sb = df_sb[df_sb['owner'] == owner_filter]
+            meta_cats_sb = utils.get_meta_categories(settings)
+            cond_meta_sb = df_sb['category'].isin(meta_cats_sb) if meta_cats_sb else pd.Series(False, index=df_sb.index)
+            cond_title_sb = df_sb['title'].astype(str).str.contains(r'aplica[çc][ãa]o\s+rdb', case=False, na=False, regex=True)
+            total_aplicado_sb = df_sb[cond_meta_sb | cond_title_sb]['amount'].sum()
+        
+        if total_aplicado_sb > 0 or total_resgatado_sb > 0:
+            filtered_income_net_count += 1
+        
+    val_rec = filtered_income_net_count
+    
+    if st.session_state.privacy_mode:
+        val_trans = "****"
+        val_rec = "****"
+        
+    col_kpi1.metric("Receitas", val_rec, help="Resgates não são contabilizados como receita")
+    col_kpi2.metric("Transações", val_trans)
     
     st.divider()
     
@@ -190,40 +326,75 @@ with st.sidebar:
                 st.warning("Selecione pelo menos um tipo de dado para apagar.")
             else:
                 msg_success = []
+                
+                # Coluna de data a usar depende do modo de visualização
+                del_date_col = 'reference_date' if view_mode_global == "Mês de Referência" else 'date'
+                
                 # Apagar Despesas
                 if del_expenses and not df.empty:
                     # Garantir datetime
-                    df['dt_obj'] = pd.to_datetime(df['date'], errors='coerce')
+                    use_col = del_date_col if del_date_col in df.columns else 'date'
+                    df['dt_obj'] = pd.to_datetime(df[use_col], format='mixed', errors='coerce')
                     mask_keep = ~((df['dt_obj'].dt.month == del_month) & (df['dt_obj'].dt.year == del_year))
                     
+                    deleted_exp = len(df) - mask_keep.sum()
                     new_df_kept = df[mask_keep].drop(columns=['dt_obj'])
                     st.session_state.df = new_df_kept
-                    utils.save_data(new_df_kept)
-                    msg_success.append("Despesas")
+                    utils.save_data_and_refresh_liquidas(new_df_kept, st.session_state.income_df, st.session_state.settings)
+                    msg_success.append(f"Despesas ({deleted_exp} itens)")
 
                 # Apagar Receitas
                 if del_income:
                     # Carregar receitas atuais para garantir que temos o último estado
                     curr_income = utils.load_income_data()
-                    if not curr_income.empty and 'date' in curr_income.columns:
-                        curr_income['dt_temp'] = pd.to_datetime(curr_income['date'], errors='coerce')
+                    
+                    if not curr_income.empty:
+                        use_col = del_date_col if del_date_col in curr_income.columns else 'date'
+                        curr_income['dt_temp'] = pd.to_datetime(curr_income[use_col], format='mixed', errors='coerce')
+                        
+                        total_before = len(curr_income)
+                        
                         mask_inc_keep = ~((curr_income['dt_temp'].dt.month == del_month) & (curr_income['dt_temp'].dt.year == del_year))
-                        new_inc_kept = curr_income[mask_inc_keep].drop(columns=['dt_temp'])
-                        utils.save_income_data(new_inc_kept)
-                        msg_success.append("Receitas")
-                
+                        new_inc_kept = curr_income[mask_inc_keep].copy()
+                        
+                        total_after = len(new_inc_kept)
+                        deleted_count = total_before - total_after
+                        
+                        if deleted_count > 0:
+                            if 'dt_temp' in new_inc_kept.columns:
+                                new_inc_kept = new_inc_kept.drop(columns=['dt_temp'])
+                            
+                            cols_to_save = [c for c in new_inc_kept.columns if not c.startswith('_')]
+                            new_inc_kept = new_inc_kept[cols_to_save]
+                            
+                            utils.save_income_and_refresh_liquidas(new_inc_kept, st.session_state.df, st.session_state.settings)
+                            msg_success.append(f"Receitas ({deleted_count} itens)")
+                        else:
+                            st.warning(f"Nenhuma receita encontrada em {del_month}/{del_year}.")
+
                 if msg_success:
-                     st.success(f"Dados de {del_month}/{del_year} ({', '.join(msg_success)}) apagados.")
-                     time.sleep(1.5)
+                     st.cache_data.clear() # Forçar limpeza de cache
+                     st.success(f"Sucesso! {', '.join(msg_success)} apagados.")
+                     time.sleep(2)
                      st.rerun()
-                else:
-                     st.warning(f"Nenhum dado encontrado para apagar em {del_month}/{del_year}.")
+                elif not del_expenses: # Se só marcou receitas e não achou nada
+                     st.warning("Nenhum dado encontrado para apagar nos critérios selecionados.")
                 
         # Opção 2: Reset Total
         if st.button("🔥 APAGAR TUDO (Reset)"):
-            utils.save_data(pd.DataFrame(columns=df.columns))
+            # 1. Apagar Despesas
+            utils.save_data_and_refresh_liquidas(pd.DataFrame(columns=df.columns), None, st.session_state.settings)
             st.session_state.df = utils.load_data()
-            st.success("Todos os dados foram apagados.")
+            
+            # 2. Apagar Receitas
+            curr_inc = utils.load_income_data()
+            if not curr_inc.empty:
+                utils.save_income_and_refresh_liquidas(pd.DataFrame(columns=curr_inc.columns), st.session_state.df, st.session_state.settings)
+                st.session_state.income_df = utils.load_income_data()
+            
+            st.cache_data.clear()
+            st.success("Todos os dados (Despesas e Receitas) foram apagados.")
+            time.sleep(1.5)
             st.rerun()
 
 # Criar Abas (Ordem Solicitada: Receitas, Importar, Transações, Dashboard, Planejamento, Projeções)
@@ -268,15 +439,20 @@ with tab1:
     display_income = full_income_df.copy()
     
     if not display_income.empty and 'date' in display_income.columns:
-        display_income['date'] = pd.to_datetime(display_income['date'], errors='coerce')
+        display_income['date'] = pd.to_datetime(display_income['date'], format='mixed', errors='coerce')
+        if 'reference_date' in display_income.columns:
+            display_income['reference_date'] = pd.to_datetime(display_income['reference_date'], format='mixed', errors='coerce')
+        
+        # Escolher coluna de filtro baseado no modo de visualização
+        filter_col_rec = 'reference_date' if view_mode_global == "Mês de Referência" and 'reference_date' in display_income.columns else 'date'
         
         # Filtrar por mês (0 = Todos)
         if selected_month_rec != 0:
-            display_income = display_income[display_income['date'].dt.month == selected_month_rec]
+            display_income = display_income[display_income[filter_col_rec].dt.month == selected_month_rec]
         
         # Filtrar por ano (0 = Todos)
         if selected_year_rec != 0:
-            display_income = display_income[display_income['date'].dt.year == selected_year_rec]
+            display_income = display_income[display_income[filter_col_rec].dt.year == selected_year_rec]
     
     # Filtro Visual de Pessoa (Se selecionado pessoa específica)
     if owner_filter != "Todos":
@@ -285,11 +461,65 @@ with tab1:
         st.caption(f"Editando receitas de: **{owner_filter}**")
     else:
         st.caption("Editando **Todas** as receitas")
+    # --- LÓGICA VISUAL: APLICAÇÃO - RESGATE (Linha Sintética) ---
+    # Calcular Aplicações (Transações) - Resgates (Receitas) do mês filtrado
+    total_aplicado_rec = 0.0
+    if not st.session_state.df.empty:
+        df_aplic = st.session_state.df.copy()
+        date_col_aplic = 'reference_date' if view_mode_global == "Mês de Referência" else 'date'
+        if date_col_aplic not in df_aplic.columns: date_col_aplic = 'date'
+        
+        if not pd.api.types.is_datetime64_any_dtype(df_aplic[date_col_aplic]):
+            df_aplic[date_col_aplic] = pd.to_datetime(df_aplic[date_col_aplic], errors='coerce')
+        
+        # Filtros de data e pessoa
+        mask_aplic = pd.Series(True, index=df_aplic.index)
+        if selected_month_rec != 0: mask_aplic &= (df_aplic[date_col_aplic].dt.month == selected_month_rec)
+        if selected_year_rec != 0: mask_aplic &= (df_aplic[date_col_aplic].dt.year == selected_year_rec)
+        if owner_filter != "Todos" and 'owner' in df_aplic.columns: mask_aplic &= (df_aplic['owner'] == owner_filter)
+        
+        # Encontrar aplicações (Categoria Investimento/Meta ou titulo aplica)
+        meta_cats = utils.get_meta_categories(st.session_state.settings)
+        cond_meta = df_aplic['category'].isin(meta_cats) if meta_cats else pd.Series(False, index=df_aplic.index)
+        cond_title = df_aplic['title'].astype(str).str.contains(r'aplica[çc][ãa]o\s+rdb', case=False, na=False, regex=True)
+        
+        mask_aplic &= (cond_meta | cond_title)
+        total_aplicado_rec = df_aplic[mask_aplic]['amount'].sum()
+        
+    total_resgatado_rec = 0.0
+    if not display_income.empty:
+        resgates = display_income[display_income['source'].astype(str).str.contains('resgate', case=False, na=False)]
+        total_resgatado_rec = resgates['amount'].sum()
+        
+        # Esconder os resgates individuais da tabela visual
+        display_income = display_income[~display_income['source'].astype(str).str.contains('resgate', case=False, na=False)]
+        
+    rendimento_liquido = abs(total_aplicado_rec - total_resgatado_rec)
+    
+    # Adicionar o rendimento líquido como uma linha virtual no display_income
+    if total_aplicado_rec > 0 or total_resgatado_rec > 0:
+        synth_row = pd.DataFrame([{
+            "date": pd.Timestamp.now().normalize(),
+            "reference_date": pd.Timestamp.now().normalize(),
+            "source": f"Aplicação RDB - Resgate RDB",
+            "amount": rendimento_liquido,
+            "type": "Extra",
+            "recurrence": "Única",
+            "owner": owner_filter if owner_filter != "Todos" else "Família",
+            "_temp_id": "SYNTHETIC_ROW_DO_NOT_EDIT"
+        }])
+        display_income = pd.concat([synth_row, display_income], ignore_index=True)
+    # -----------------------------------------------------
 
-    # --- Filtros e Ordenação Avançada (Receitas) ---
-    col_search_inc, _ = st.columns([2, 1])
-    with col_search_inc:
+    # --- Filtros visuais (Search + Sort)
+    col_search, col_sort_toggles = st.columns([2, 3])
+    with col_search:
         search_term_inc = st.text_input("🔍 Buscar Receita", placeholder="Ex: Salário, Rendimento...", key="search_income")
+    
+    # --- EDIÇÃO EM MASSA (TOGGLE) ---
+    with col_sort_toggles:
+        st.write("") # Spacer
+        bulk_edit_mode = st.checkbox("✅ Ativar Edição em Massa", key="bulk_mode_toggle", help="Permite alterar várias linhas de uma vez. Marque para habilitar checkboxes.")
     
     if search_term_inc and 'source' in display_income.columns:
          display_income = display_income[display_income['source'].astype(str).str.contains(search_term_inc, case=False, na=False)]
@@ -313,19 +543,134 @@ with tab1:
                  sort_ascending_inc.append(True if direction == "Asc" else False)
 
     if active_sorts_inc:
-        if 'date' in display_income.columns: # date já deve ser datetime
-             display_income = display_income.sort_values(by=active_sorts_inc, ascending=sort_ascending_inc)
+        if 'date' in display_income.columns:
+             display_income['date'] = pd.to_datetime(display_income['date'], errors='coerce')
+        if 'reference_date' in display_income.columns:
+             display_income['reference_date'] = pd.to_datetime(display_income['reference_date'], errors='coerce')
+        display_income = display_income.sort_values(by=active_sorts_inc, ascending=sort_ascending_inc)
 
-    # Resetar index para evitar colunas estranhas no editor e garantir alinhamento
+    # Resetar index para editor
     display_income = display_income.reset_index(drop=True)
+    
+    # --- LÓGICA DE EDIÇÃO EM MASSA ---
+    if bulk_edit_mode:
+        if "Selecionar" not in display_income.columns:
+            display_income.insert(0, "Selecionar", False)
+        
+        # Configuração das Colunas para Edição em Massa
+        column_config_bulk = {
+            "Selecionar": st.column_config.CheckboxColumn("Selecionar", default=False, width="small"),
+            "date": st.column_config.DateColumn("Data da Transação", format="DD/MM/YYYY", disabled=True),
+            "reference_date": st.column_config.DateColumn("Mês de Referência", format="MM/YYYY", disabled=True),
+            "source": st.column_config.TextColumn("Fonte de Renda", disabled=True),
+            "amount": st.column_config.NumberColumn("Valor (R$)", format="R$ %.2f", disabled=True),
+            "type": st.column_config.TextColumn("Tipo", disabled=True), # Visualização apenas por enquanto
+            "owner": st.column_config.TextColumn("Pessoa", disabled=True),
+            "_temp_id": None
+        }
+        
+        st.info("ℹ️ Marque a caixa 'Selecionar' nas linhas que deseja alterar. Dica: Clique e arraste para selecionar várias!")
+        
+        edited_df_bulk = st.data_editor(
+            display_income,
+            column_config=column_config_bulk,
+            hide_index=True,
+            use_container_width=True,
+            key="bulk_editor_income",
+            disabled=["date", "reference_date", "source", "amount", "type", "owner"] # Travar tudo exceto Checkbox
+        )
+        
+        # BARRA DE AÇÕES EM MASSA
+        selected_rows = edited_df_bulk[edited_df_bulk["Selecionar"] == True]
+        count_selected = len(selected_rows)
+        
+        if count_selected > 0:
+            st.markdown(f"### 📝 Editando {count_selected} itens selecionados")
+            
+            with st.form("bulk_action_form_income"):
+                col_b1, col_b2, col_b3 = st.columns(3)
+                
+                with col_b1:
+                    new_bulk_type = st.selectbox("Novo Tipo", ["(Manter Atual)", "Fixo", "Variável", "Extra"])
+                with col_b2:
+                    new_bulk_owner = st.selectbox("Nova Pessoa", ["(Manter Atual)", "Pamela", "Renato", "Família"])
+                with col_b3:
+                    new_bulk_date = st.date_input("Nova Data", value=None)
+                
+                if st.form_submit_button("🚀 Aplicar Mudanças em Massa"):
+                    # Processar Atualização
+                    ids_to_update = selected_rows['_temp_id'].tolist()
+                    
+                    if not ids_to_update:
+                         st.warning("Nenhum ID encontrado.")
+                    else:
+                        # Carregar o DF completo para aplicar as mudanças
+                        full_income_to_update = utils.load_income_data()
+                        
+                        # Recriar _temp_id para o full_income_to_update para encontrar as linhas
+                        if not full_income_to_update.empty:
+                            full_income_to_update['date'] = pd.to_datetime(full_income_to_update['date'], errors='coerce')
+                            if 'reference_date' in full_income_to_update.columns:
+                                full_income_to_update['reference_date'] = pd.to_datetime(full_income_to_update['reference_date'], errors='coerce')
+                            
+                            full_income_to_update['_temp_id'] = full_income_to_update.apply(
+                                lambda row: hash((str(row.get('date', '')), str(row.get('source', '')), 
+                                                str(row.get('amount', '')), str(row.get('owner', '')),
+                                                str(row.get('reference_date', '')))), 
+                                axis=1
+                            ).astype(str)
+
+                        mask = full_income_to_update['_temp_id'].isin(ids_to_update)
+                        
+                        changes_made = False
+                        if new_bulk_type != "(Manter Atual)":
+                            full_income_to_update.loc[mask, 'type'] = new_bulk_type
+                            changes_made = True
+                            
+                        if new_bulk_owner != "(Manter Atual)":
+                            full_income_to_update.loc[mask, 'owner'] = new_bulk_owner
+                            changes_made = True
+                        
+                        if new_bulk_date is not None:
+                            full_income_to_update.loc[mask, 'date'] = pd.to_datetime(new_bulk_date)
+                            changes_made = True
+                            
+                        if changes_made:
+                            # Remover _temp_id antes de salvar
+                            full_income_to_update = full_income_to_update.drop(columns=['_temp_id'])
+                            utils.save_income_and_refresh_liquidas(full_income_to_update, st.session_state.df, st.session_state.settings)
+                            st.session_state.income_df = full_income_to_update # Atualizar globalmente
+                            st.success(f"✅ {count_selected} receitas atualizadas com sucesso!")
+                            time.sleep(1)
+                            st.rerun()
+                            
+    # --- FIM LÓGICA EM MASSA ---
 
     # Editor de Receitas
-    edited_income = st.data_editor(
-        display_income,
-        num_rows="dynamic",
-        use_container_width=True,
-        hide_index=True,
-        column_config={
+    # Se modo privacidade, usar dataframe estático mascarado
+    elif st.session_state.privacy_mode:
+         st.dataframe(
+             get_privacy_data(display_income), 
+             use_container_width=True, 
+             hide_index=True,
+             column_config={
+                "_temp_id": None # Ocultar
+             }
+         )
+         edited_income = display_income # Sem edição
+    else:
+        # Prevenção pro PyArrow: Garantir que as colunas visíveis de data sejam estritamente datetime64 do Pandas
+        if 'date' in display_income.columns:
+            display_income['date'] = pd.to_datetime(display_income['date'], errors='coerce')
+        if 'reference_date' in display_income.columns:
+            display_income['reference_date'] = pd.to_datetime(display_income['reference_date'], errors='coerce')
+            
+        edited_income = st.data_editor(
+            display_income,
+            num_rows="dynamic",
+            use_container_width=True,
+            hide_index=True,
+            column_config={
             "date": st.column_config.DateColumn("Data da Transação", format="DD/MM/YYYY"),
             "reference_date": st.column_config.DateColumn("Mês de Referência", format="MM/YYYY"),
             "source": st.column_config.TextColumn("Fonte de Renda"),
@@ -434,7 +779,7 @@ with tab1:
         
         # 7. Salvar
         # 7. Salvar e Atualizar Session State
-        utils.save_income_data(final_income)
+        utils.save_income_and_refresh_liquidas(final_income, st.session_state.df, st.session_state.settings)
         st.session_state.income_df = final_income # Atualizar globalmente
         
         st.success("✅ Receitas atualizadas com sucesso!")
@@ -550,7 +895,7 @@ with tab2:
         # Preview de Receitas (se houver)
         if has_income:
             st.markdown("### 💰 Receitas a Importar")
-            st.dataframe(import_data['income'].head(5), use_container_width=True, column_config=preview_cols)
+            st.dataframe(get_privacy_data(import_data['income'].head(5)), use_container_width=True, column_config=preview_cols)
             if len(import_data['income']) > 5:
                 st.caption(f"... e mais {len(import_data['income']) - 5} receitas.")
                 
@@ -586,10 +931,33 @@ with tab2:
                     new_inc_df = import_data['income']
                     
                     combined_inc, duplicates_inc = utils.merge_and_save_income(current_income, new_inc_df)
+                    st.session_state.income_df = combined_inc # Atualiza estado para sidebar
                     new_inc_count = len(new_inc_df) - duplicates_inc
                 
                 # Limpar temp
                 del st.session_state.temp_import_data
+                
+                # === GERAR DADOS LÍQUIDOS ===
+                # Recalcular receitas e transações líquidas com os dados atualizados
+                try:
+                    current_income_full = st.session_state.get('income_df', utils.load_income_data())
+                    current_trans_full = st.session_state.df
+                    
+                    # Receitas líquidas (sem resgates + rendimento sintético)
+                    rec_liq = utils.compute_receitas_liquidas(
+                        current_income_full, current_trans_full, st.session_state.settings
+                    )
+                    utils.save_receitas_liquidas(rec_liq)
+                    
+                    # Transações líquidas (sem aplicações/metas)
+                    trans_liq = utils.compute_transacoes_liquidas(
+                        current_trans_full, st.session_state.settings
+                    )
+                    utils.save_transacoes_liquidas(trans_liq)
+                    
+                    st.info("📊 Dados líquidos atualizados com sucesso!")
+                except Exception as e:
+                    st.warning(f"⚠️ Dados líquidos não puderam ser gerados: {e}")
                 
                 # Relatório
                 st.success("Importação Concluída!")
@@ -644,20 +1012,32 @@ with tab3:
         #     # st.rerun() # Recarrega para que o dropdown use a nova lista imediatamente
         pass
 
-        with st.expander("🧙‍♂️ Mágico de Categorização (Regras + Aprendizado)"):
-            st.write("Analisa suas transações usando:")
-            st.markdown("- **Regras fixas** (Nowpark → Transporte, Uber → Transporte, etc)")
-            st.markdown("- **Padrões aprendidos** das suas categorizações manuais anteriores")
-            st.info("💡 **Como funciona:** O Mágico **salva automaticamente** ao clicar em 'Aplicar'. Transações categorizadas desaparecem da lista porque mudaram de categoria (isso é normal!).")
-            
-            col_wiz1, col_wiz2 = st.columns(2)
-            with col_wiz1:
-                # Mudança para Multiselect conforme pedido
-                wiz_target = st.multiselect("Escopo da Busca:", ["Vazias", "Outros/Geral", "Todas as Categorias"], default=["Vazias"])
+    # --- MÁGICO DE CATEGORIZAÇÃO (COM MENU SUSPENSO) ---
+    with st.expander("🧙‍♂️ Mágico de Categorização (IA + Aprendizado)", expanded=False):
+        st.write("Analisa suas transações usando **Regras fixas** e **Padrões aprendidos**.")
+        st.info("💡 **Dica:** Ao clicar em 'Aplicar', o sistema aprende suas correções para o futuro!")
+
+        col_wiz1, col_wiz2 = st.columns(2)
+        with col_wiz1:
+             wiz_target = st.multiselect("Escopo da Busca:", ["Vazias", "Outros/Geral", "Todas as Categorias"], default=["Vazias"])
+        
+        # Carregar histórico de aprendizado (Cache resource para não ler toda hora)
+        # Carregar histórico de aprendizado
+        # Usando utils para evitar erro de escopo no cache do streamlit
+        ml_history_df = utils.load_ml_history_cached()
+
+        # Treinar modelo com histórico + dados atuais
+        learned_patterns = ml_patterns.learn_patterns_from_data(df, ml_history_df)
+        
+        # Identificar transações sem categoria ("Outros" ou vazias)
+        uncategorized = df[df['category'].isin(['Outros', '', None])].copy()
+        
+        if not uncategorized.empty:
+            st.info(f"Encontrei {len(uncategorized)} transações para analisar.")
             
             if st.button("🔍 Buscar Sugestões"):
                 # Aprende com dados históricos
-                learned_patterns = ml_patterns.learn_patterns_from_data(df)
+                learned_patterns = ml_patterns.learn_patterns_from_data(df, ml_history_df)
                 
                 wiz_suggestions = []
                 for idx, row in df.iterrows():
@@ -683,7 +1063,11 @@ with tab3:
                     
                     # 2. Se regras não deram resultado, usa aprendizado
                     if not suggested or suggested == 'Outros':
-                        suggested = ml_patterns.suggest_category_from_learned(row['title'], learned_patterns)
+                        suggested = ml_patterns.suggest_category_from_learned(
+                            title=row['title'], 
+                            learned_patterns=learned_patterns,
+                            amount=row['amount']
+                        )
                     
                     # MUDANÇA: Mostra TODAS as transações do escopo, mesmo sem sugestão
                     # Se não conseguiu sugerir, deixa vazio para edição manual
@@ -702,7 +1086,24 @@ with tab3:
                     })
                 
                 if wiz_suggestions:
-                    st.session_state.wiz_suggestions = pd.DataFrame(wiz_suggestions)
+                    df_wiz = pd.DataFrame(wiz_suggestions)
+                    
+                    # CORREÇÃO DE ERRO PYARROW: Garantir tipos compatíveis
+                    # Converter Data para datetime (coerce errors)
+                    if 'Data' in df_wiz.columns:
+                        df_wiz['Data'] = pd.to_datetime(df_wiz['Data'], errors='coerce')
+                    
+                    # Converter Valor para float
+                    if 'Valor' in df_wiz.columns:
+                        df_wiz['Valor'] = pd.to_numeric(df_wiz['Valor'], errors='coerce').fillna(0.0)
+                    
+                    # Converter Texto para string (evitar misturar None/float/str)
+                    text_cols = ['Descrição', 'Pessoa', 'Categoria Atual', 'Nova Categoria']
+                    for col in text_cols:
+                        if col in df_wiz.columns:
+                            df_wiz[col] = df_wiz[col].astype(str).replace('nan', '').replace('None', '')
+
+                    st.session_state.wiz_suggestions = df_wiz
                     auto_suggestions = len([s for s in wiz_suggestions if s["Nova Categoria"]])
                     st.success(f"Mostrando {len(wiz_suggestions)} transações ({auto_suggestions} com sugestão automática).")
                     st.info(f"📚 Aprendi padrões de {len(learned_patterns)} palavras-chave do seu histórico.")
@@ -716,8 +1117,18 @@ with tab3:
                 st.markdown("### Transações para Categorizar")
                 st.caption("✏️ Você pode editar a 'Nova Categoria' manualmente. Deixe em branco para não alterar.")
                 
+                # SANITIZAÇÃO DE EMERGÊNCIA (Antes de Exibir)
+                # Garante que, mesmo se o cache estiver sujo, os tipos sejam corrigidos agora.
+                wiz_df_display = st.session_state.wiz_suggestions.copy()
+                
+                if 'Data' in wiz_df_display.columns:
+                     wiz_df_display['Data'] = pd.to_datetime(wiz_df_display['Data'], errors='coerce')
+                
+                if 'Valor' in wiz_df_display.columns:
+                     wiz_df_display['Valor'] = pd.to_numeric(wiz_df_display['Valor'], errors='coerce').fillna(0.0)
+                
                 edited_wiz = st.data_editor(
-                    st.session_state.wiz_suggestions,
+                    wiz_df_display,
                     column_config={
                         "id": None, 
                         "Descrição": st.column_config.TextColumn("Descrição", width="large", help="Descrição original do banco"),
@@ -749,11 +1160,27 @@ with tab3:
                             # Atualiza somente se tiver uma categoria válida
                             mask = st.session_state.df['id'] == row['id']
                             st.session_state.df.loc[mask, 'category'] = row['Nova Categoria']
+                            
+                            # PERSISTÊNCIA ML: Salvar o aprendizado na planilha
+                            # Salvar descrição original e nova categoria
+                            # Dispara em background/thread se possível, mas aqui vamos sequencial para garantir
+                            try:
+                                gsheets.append_classification(
+                                    description=row['title'], 
+                                    category=row['Nova Categoria'],
+                                    amount=row['amount'],
+                                    date=row['date']
+                                )
+                                # st.toast(f"🧠 Aprendi: {row['title']} -> {row['Nova Categoria']}", icon="🤓")
+                            except Exception as e:
+                                print(f"Erro ao salvar aprendizado ML: {e}")
+                                
                             count += 1
                     
                     if count > 0:
-                        utils.save_data(st.session_state.df)
+                        utils.save_data_and_refresh_liquidas(st.session_state.df, st.session_state.income_df, st.session_state.settings)
                         st.success(f"✅ {count} transações categorizadas e **salvas automaticamente**!")
+                        st.toast(f"Mágico aprendeu {count} novos padrões!", icon="🧙‍♂️")
                         st.info("💡 **Transações categorizadas desaparecem da lista** porque mudaram de categoria. Isso é normal! Veja-as na aba 'Transações' ou clique em 'Buscar Sugestões' novamente.")
                         del st.session_state.wiz_suggestions
                         st.rerun()
@@ -764,83 +1191,94 @@ with tab3:
     # ------------------------------------
 
     # Filtros (Só mostra se tiver dados, mas o editor aparece sempre)
-    col_search, col_month, col_year = st.columns([2, 1, 1])
+    # --- FILTROS DE TRANSAÇÕES (ESTILO RECEITAS) ---
+    col_trans_filter1, col_trans_filter2 = st.columns(2)
     
-    with col_search:
-        search_term = st.text_input("🔍 Buscar por título...")
-        
-    current_date = datetime.now()
-    with col_month:
+    with col_trans_filter1:
         # Opção "Todos" para ver histórico completo ou mês específico
         months = {0: "Todos", 1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 5: "Maio", 6: "Junho", 7: "Julho", 8: "Agosto", 9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"}
-        selected_month_trans = st.selectbox("Mês", options=list(months.keys()), format_func=lambda x: months[x], index=current_date.month)
+        current_date_trans = datetime.now()
+        selected_month_trans = st.selectbox("Mês", options=list(months.keys()), format_func=lambda x: months[x], index=current_date_trans.month, key="trans_month_filter")
         
-    with col_year:
+    with col_trans_filter2:
         years = [0] + list(range(2024, 2031))
-        selected_year_trans = st.selectbox("Ano", options=years, format_func=lambda x: "Todos" if x == 0 else str(x), index=years.index(current_date.year) if current_date.year in years else 0)
+        selected_year_trans = st.selectbox("Ano", options=years, format_func=lambda x: "Todos" if x == 0 else str(x), index=years.index(current_date_trans.year) if current_date_trans.year in years else 0, key="trans_year_filter")
     
-    # Filtro Visual de Pessoa (Transações)
+    # Filtro Visual de Pessoa
     if owner_filter != "Todos":
         if 'owner' not in display_df.columns: display_df['owner'] = "Família"
         display_df = display_df[display_df['owner'] == owner_filter]
+        st.caption(f"Editando transações de: **{owner_filter}**")
+        
+    # --- NOVO: ESCONDER APLICAÇÕES DA LISTA DE TRANSAÇÕES ---
+    # As aplicações devem aparecer apenas como valor líquido em Receitas.
+    meta_cats_trans = utils.get_meta_categories(st.session_state.settings)
+    cond_meta_trans = display_df['category'].isin(meta_cats_trans) if meta_cats_trans else pd.Series(False, index=display_df.index)
+    cond_title_trans = display_df['title'].astype(str).str.contains('aplica', case=False, na=False)
     
-    # Aplicar filtros apenas se tiver dados
+    display_df = display_df[~(cond_meta_trans | cond_title_trans)]
+    # ---------------------------------------------------------
+    
+    # Aplicar filtros de Data (Mês/Ano)
     if not display_df.empty:
-        # Garantir que a coluna date seja datetime para filtragem
-        # Validação segura de tipos
-        if 'date' in display_df.columns and not pd.api.types.is_datetime64_any_dtype(display_df['date']):
-             display_df['date'] = pd.to_datetime(display_df['date'], errors='coerce')
+        # Garantir tipos
+        target_col = 'reference_date' if view_mode_global == "Mês de Referência" else 'date'
+        if target_col not in display_df.columns and target_col == 'reference_date':
+            display_df['reference_date'] = display_df['date'] # Fallback
+        
+        if not pd.api.types.is_datetime64_any_dtype(display_df[target_col]):
+            display_df[target_col] = pd.to_datetime(display_df[target_col], errors='coerce')
 
-        if search_term:
-            display_df = display_df[display_df['title'].str.contains(search_term, case=False, na=False)]
-            
         if selected_month_trans != 0:
-            target_col = 'reference_date' if view_mode_global == "Mês de Referência" else 'date'
-            
-            # Garantir tipos
-            if target_col not in display_df.columns and target_col == 'reference_date':
-                display_df['reference_date'] = display_df['date'] # Fallback
-            
-            if not pd.api.types.is_datetime64_any_dtype(display_df[target_col]):
-                display_df[target_col] = pd.to_datetime(display_df[target_col], errors='coerce')
-                
             display_df = display_df[display_df[target_col].dt.month == selected_month_trans]
             
         if selected_year_trans != 0:
-            # Reutiliza target_col definido acima ou define agora
-            target_col = 'reference_date' if view_mode_global == "Mês de Referência" else 'date'
-            if target_col not in display_df.columns and target_col == 'reference_date': display_df['reference_date'] = display_df['date']
-            if not pd.api.types.is_datetime64_any_dtype(display_df[target_col]): display_df[target_col] = pd.to_datetime(display_df[target_col], errors='coerce')
-
             display_df = display_df[display_df[target_col].dt.year == selected_year_trans]
+
+    # --- BUSCA E TOOLS ---
+    col_search_trans, col_sort_toggles_trans = st.columns([2, 3])
+    with col_search_trans:
+        search_term = st.text_input("🔍 Buscar Transação", placeholder="Ex: Mercado, Uber...", key="search_trans")
         
-        # Ordenação Multi-Coluna (Solicitação do Usuário)
-        st.caption("Ordenação Personalizada")
-        col_sort1, col_sort2 = st.columns([2, 1])
-        with col_sort1:
-            # Opções amigáveis para o usuário
-            sort_cols = st.multiselect("Ordenar por:", ['DATA', 'VALOR', 'CATEGORIA', 'DESCRIÇÃO', 'PESSOA'], default=['DATA'], key="sort_cols_trans")
-        
-        sort_directions = []
-        if sort_cols:
-            with col_sort2:
-                st.caption("Direção")
-                for col in sort_cols:
-                     direction = st.selectbox(f"Ordem de {col}", ["Decrescente", "Crescente"], key=f"sort_dir_trans_{col}", label_visibility="collapsed")
-                     sort_directions.append(True if direction == "Crescente" else False)
+    with col_sort_toggles_trans:
+        st.write("") # Spacer
+        bulk_edit_mode = st.checkbox("✅ Ativar Edição em Massa", key="bulk_mode_toggle_trans", help="Permite alterar várias linhas de uma vez.")
+
+    # Aplicar Filtro de Busca
+    if search_term and not display_df.empty:
+        display_df = display_df[display_df['title'].str.contains(search_term, case=False, na=False)]
             
-            # Mapeamento de nomes amigáveis para colunas reais
-            col_map = {
-                'DATA': 'date', 
-                'VALOR': 'amount', 
-                'CATEGORIA': 'category', 
-                'DESCRIÇÃO': 'title', 
-                'PESSOA': 'owner'
-            }
-            real_cols = [col_map[c] for c in sort_cols]
-            
-            if real_cols:
-                display_df = display_df.sort_values(by=real_cols, ascending=sort_directions)
+    # --- ORDENAÇÃO (ESTILO RECEITAS) ---
+    st.caption("Ordenar por:")
+    col_sort_trans = st.columns(5)
+    sort_opts_trans = ["Data", "Mês Ref.", "Categoria", "Valor", "Pessoa"]
+    # Mapeamento de nomes amigáveis para colunas reais
+    sort_cols_map_trans = {
+        "Data": "date", 
+        "Mês Ref.": "reference_date", 
+        "Categoria": "category", 
+        "Valor": "amount", 
+        "Pessoa": "owner"
+    }
+    
+    active_sorts_trans = []
+    sort_ascending_trans = []
+    
+    for i, col_name in enumerate(sort_opts_trans):
+        with col_sort_trans[i]:
+             clicked = st.checkbox(col_name, key=f"sort_trans_{col_name}", value=(col_name=="Data")) # Default Data checked
+             if clicked:
+                 active_sorts_trans.append(sort_cols_map_trans[col_name])
+                 # Direção
+                 direction = st.radio("Direção", ["Decrescente", "Crescente"], key=f"dir_trans_{col_name}", label_visibility="collapsed", horizontal=True)
+                 sort_ascending_trans.append(True if direction == "Crescente" else False)
+
+    if active_sorts_trans and not display_df.empty:
+         if 'date' in display_df.columns:
+             display_df['date'] = pd.to_datetime(display_df['date'], format='mixed', errors='coerce')
+         if 'reference_date' in display_df.columns:
+             display_df['reference_date'] = pd.to_datetime(display_df['reference_date'], format='mixed', errors='coerce')
+         display_df = display_df.sort_values(by=active_sorts_trans, ascending=sort_ascending_trans)
     
     # SOLUÇÃO DEFINITIVA: Criar hash único APÓS TODOS OS FILTROS
     # Isso garante que rastreamos corretamento os IDs das linhas filtradas
@@ -864,114 +1302,199 @@ with tab3:
 
     original_hashes = set(display_df['_row_hash'].dropna()) if '_row_hash' in display_df.columns else set()
     hash_to_id = dict(zip(display_df['_row_hash'], display_df['id'])) if '_row_hash' in display_df.columns and 'id' in display_df.columns else {}
+
+    # --- LÓGICA DE EDIÇÃO EM MASSA (TRANSAÇÕES) ---
+    if bulk_edit_mode:
+        if "Selecionar" not in display_df.columns:
+            display_df.insert(0, "Selecionar", False)
+        
+        # Configuração das Colunas para Edição em Massa
+        column_config_bulk = {
+            "Selecionar": st.column_config.CheckboxColumn("Selecionar", default=False, width="small"),
+            "date": st.column_config.DateColumn("Data da Transação", format="DD/MM/YYYY", disabled=True),
+            "reference_date": st.column_config.DateColumn("Mês de Referência", format="MM/YYYY", disabled=True),
+            "title": st.column_config.TextColumn("Descrição", disabled=True),
+            "amount": st.column_config.NumberColumn("Valor (R$)", format="R$ %.2f", disabled=True),
+            "category": st.column_config.TextColumn("Categoria", disabled=True), # Visualização apenas por enquanto
+            "owner": st.column_config.TextColumn("Pessoa", disabled=True),
+            "_temp_id": None,
+            "_row_hash": None,
+            "id": None
+        }
+        
+        st.info("ℹ️ Marque a caixa 'Selecionar' nas linhas que deseja alterar. Dica: Clique e arraste para selecionar várias!")
+        
+        edited_df = st.data_editor(
+            display_df,
+            column_config=column_config_bulk,
+            hide_index=True,
+            use_container_width=True,
+            key="bulk_editor_trans_real",
+            disabled=["date", "reference_date", "title", "amount", "category", "owner"] # Travar tudo exceto Checkbox
+        )
+        
+        # BARRA DE AÇÕES EM MASSA
+        selected_rows = edited_df[edited_df["Selecionar"] == True]
+        count_selected = len(selected_rows)
+        
+        if count_selected > 0:
+            st.markdown(f"### 📝 Editando {count_selected} transações selecionadas")
+            
+            with st.form("bulk_action_form_trans_real"):
+                col_b1, col_b2, col_b3 = st.columns(3)
+                
+                with col_b1:
+                    new_bulk_cat = st.selectbox("Nova Categoria", ["(Manter Atual)"] + settings["categories"])
+                with col_b2:
+                    new_bulk_owner = st.selectbox("Nova Pessoa", ["(Manter Atual)", "Pamela", "Renato", "Família"])
+                with col_b3:
+                    new_bulk_date = st.date_input("Nova Data", value=None)
+                
+                if st.form_submit_button("🚀 Aplicar Mudanças em Massa"):
+                    # Processar Atualização
+                    ids_to_update = selected_rows['id'].tolist()
+                    
+                    if not ids_to_update:
+                         st.warning("Nenhum ID encontrado.")
+                    else:
+                        mask = st.session_state.df['id'].isin(ids_to_update)
+                        
+                        changes_made = False
+                        if new_bulk_cat != "(Manter Atual)":
+                            st.session_state.df.loc[mask, 'category'] = new_bulk_cat
+                            
+                            # PERSISTÊNCIA ML
+                            try:
+                                for _, row in selected_rows.iterrows():
+                                    title = row.get('title', '')
+                                    if title:
+                                         gsheets.append_classification(
+                                             description=title, 
+                                             category=new_bulk_cat,
+                                             amount=row.get('amount'),
+                                             date=row.get('date')
+                                         )
+                            except:
+                                pass
+                            
+                            changes_made = True
+                            
+                        if new_bulk_owner != "(Manter Atual)":
+                            st.session_state.df.loc[mask, 'owner'] = new_bulk_owner
+                            changes_made = True
+                        
+                        if new_bulk_date is not None:
+                             st.session_state.df.loc[mask, 'date'] = pd.to_datetime(new_bulk_date)
+                             changes_made = True
+                            
+                        if changes_made:
+                            utils.save_data_and_refresh_liquidas(st.session_state.df, st.session_state.income_df, st.session_state.settings)
+                            st.success(f"✅ {count_selected} transações atualizadas com sucesso!")
+                            time.sleep(1)
+                            st.rerun()
+
+    # --- FIM LÓGICA EM MASSA ---
             
     # Editor de Dados (Sempre visível para adição)
-    edited_df = st.data_editor(
-        display_df,
-        num_rows="dynamic",
-        hide_index=True,
-        use_container_width=True,
-        column_config={
-            "id": None, # Ocultar coluna ID
-            "_row_hash": None,  # Ocultar coluna hash
-            "dedup_idx": None, # Ocultar dedup_idx (se existir por cache)
-            "amount": st.column_config.NumberColumn("Valor (R$)", format="R$ %.2f"),
-            "date": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
-            "title": st.column_config.TextColumn("Descrição"),
-            "reference_date": st.column_config.DateColumn("Mês de Referência", format="MM/YYYY"),
-            "category": st.column_config.SelectboxColumn("Categoria", options=settings["categories"]),
-            "owner": st.column_config.SelectboxColumn("Pessoa", options=["Pamela", "Renato", "Família"])
-        },
-        key="trans_editor"  # Chave única para evitar conflitos
-    )
+    elif st.session_state.privacy_mode:
+        st.info("🔒 Modo Privacidade Ativo: Edição desabilitada.")
+        st.dataframe(
+            get_privacy_data(display_df), 
+            use_container_width=True, 
+            hide_index=True,
+            column_config={
+                "id": None, 
+                "_row_hash": None,
+                "dedup_idx": None
+            }
+        )
+        edited_df = display_df # Read-only
+    else:
+        # Editor Normal
+        edited_df = st.data_editor(
+            display_df,
+            num_rows="dynamic",
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "id": None, # Ocultar coluna ID
+                "_row_hash": None,  # Ocultar coluna hash
+                "dedup_idx": None, # Ocultar dedup_idx (se existir por cache)
+                "amount": st.column_config.NumberColumn("Valor (R$)", format="R$ %.2f"),
+                "date": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
+                "title": st.column_config.TextColumn("Descrição"),
+                "reference_date": st.column_config.DateColumn("Mês de Referência", format="MM/YYYY"),
+                "category": st.column_config.SelectboxColumn("Categoria", options=settings["categories"]),
+                "owner": st.column_config.SelectboxColumn("Pessoa", options=["Pamela", "Renato", "Família"])
+            },
+            key="trans_editor"  # Chave única para evitar conflitos
+        )
     
     # Botão Salvar
+    # Botão Salvar (Lógica Robusta Anti-Duplicação)
     if st.button("💾 Salvar Alterações", key="save_trans_btn"):
-        # REFATORAÇÃO: Usar mesmo padrão de Receitas que funciona bem
-        # 1. Carregar DataFrame completo do disco
+        # 1. Identificar IDs visíveis (que o usuário estava vendo/editando)
+        # Se display_df (filtrado) tem dados, pegamos os IDs dele.
+        # Se edited_df tem dados, ele reflete o estado atual dessas linhas (incluindo deleções que sumiram dele)
+        
+        # Recarregar dados completos do disco/estado para garantir
         full_df = utils.load_data()
         
-        # 2. Criar _row_hash no full_df (mesmo método usado em display_df)
-        if not full_df.empty and 'id' in full_df.columns:
-            full_df['_row_hash'] = full_df['id'].astype(str)
+        # Garantir ID
+        if 'id' not in full_df.columns or full_df['id'].isnull().any():
+            # Se faltar ID, regenera (caso extremo)
+            full_df['id'] = [str(uuid.uuid4()) for _ in range(len(full_df))]
         
-        # 3. Aplicar os MESMOS filtros que foram aplicados em display_df
-        # para determinar quais transações NÃO devem ser tocadas
-        full_df['date'] = pd.to_datetime(full_df['date'], errors='coerce')
-        
-        # Máscara para transações que NÃO devem ser alteradas (fora do filtro atual)
-        mask_keep = pd.Series([True] * len(full_df), index=full_df.index)
-        
-        # Inverter lógica dos filtros: marcar como "keep" o que NÃO está no filtro
-        if search_term:
-            mask_keep = mask_keep & ~(full_df['title'].str.contains(search_term, case=False, na=False))
-        
-        if selected_month_trans != 0:
-            mask_keep = mask_keep & (full_df['date'].dt.month != selected_month_trans)
-        
-        if selected_year_trans != 0:
-            mask_keep = mask_keep & (full_df['date'].dt.year != selected_year_trans)
-        
-        # Aplicar filtro de pessoa (owner_filter vem do filtro global)
-        if owner_filter != "Todos" and 'owner' in full_df.columns:
-            mask_keep = mask_keep | (full_df['owner'] != owner_filter)
-        
-        # Transações fora do filtro = preservar
-        untouched_trans = full_df[mask_keep].copy()
-        
-        # 4. Detectar deleções comparando hashes
-        if '_row_hash' in display_df.columns and not display_df.empty:
-            original_ids_shown = set(display_df['_row_hash'].dropna())
+        # 2. Obter IDs que estavam no escopo de edição (display_df antes da edição)
+        # PRECISÃO CRÍTICA: Precisamos saber quais IDs foram apresentados no data_editor.
+        # O display_df aqui já passou por todos os filtros acima.
+        visible_ids = []
+        if not display_df.empty and 'id' in display_df.columns:
+            visible_ids = display_df['id'].tolist()
             
-            if edited_df.empty:
-                edited_ids = set()  # Todas deletadas
-            elif '_row_hash' in edited_df.columns:
-                edited_ids = set(edited_df['_row_hash'].dropna())
-            else:
-                # Fallback: sem hash = assume que são todas novas
-                edited_ids = set()
+        # 3. Remover do full_df TUDO que estava visível (para ser substituído pela versão editada)
+        if visible_ids:
+            # Mantém apenas o que NÃO estava visível
+            untouched_df = full_df[~full_df['id'].isin(visible_ids)].copy()
+        else:
+            untouched_df = full_df.copy()
             
-            deleted_hashes = original_ids_shown - edited_ids
-            
-            # Remover deletadas de untouched_trans
-            if deleted_hashes and '_row_hash' in untouched_trans.columns:
-                untouched_trans = untouched_trans[~untouched_trans['_row_hash'].isin(deleted_hashes)]
+        # 4. Preparar dados editados (edited_df) para reinserção
+        # edited_df contém o que sobrou na tela após edições/deleções do usuário
+        # Linhas deletadas no editor simplesmente não estão mais no edited_df
         
-        # 5. Processar edited_df: separar novas vs editadas
         if not edited_df.empty:
-            # Linhas com _row_hash são editadas, sem _row_hash são novas
-            if '_row_hash' in edited_df.columns:
-                edited_existing = edited_df[edited_df['_row_hash'].notna()].copy()
-                new_rows = edited_df[edited_df['_row_hash'].isna()].copy()
-            else:
-                # Se não tem hash, todas são novas
-                edited_existing = pd.DataFrame()
-                new_rows = edited_df.copy()
+            # Separar novas linhas (sem ID ou ID NaN)
+            if 'id' not in edited_df.columns:
+                edited_df['id'] = np.nan
             
-            # Gerar IDs para novas
+            # Novas linhas (adicionadas pelo usuário no editor)
+            new_rows_mask = edited_df['id'].isnull() | (edited_df['id'] == "")
+            new_rows = edited_df[new_rows_mask].copy()
+            
+            # Linhas existentes (que sobreviveram à edição)
+            existing_rows = edited_df[~new_rows_mask].copy()
+            
+            # Gerar IDs para novas linhas
             if not new_rows.empty:
                 new_rows['id'] = [str(uuid.uuid4()) for _ in range(len(new_rows))]
-                if '_row_hash' in new_rows.columns:
-                    new_rows = new_rows.drop(columns=['_row_hash'])
-            
-            # Limpar _row_hash de editadas
-            if not edited_existing.empty and '_row_hash' in edited_existing.columns:
-                edited_existing = edited_existing.drop(columns=['_row_hash'])
-            
-            # Combinar: untouched + editadas + novas
-            final_df = pd.concat([untouched_trans, edited_existing, new_rows], ignore_index=True)
+                
+            # Combinar para salvar
+            rows_to_save = pd.concat([existing_rows, new_rows], ignore_index=True)
         else:
-            # Se edited_df vazio, só manter untouched
-            final_df = untouched_trans.copy()
+            rows_to_save = pd.DataFrame()
+            
+        # 5. Combinar Intocados + EditadosSalvos
+        final_df = pd.concat([untouched_df, rows_to_save], ignore_index=True)
         
-        # 6. Limpar _row_hash antes de salvar
-        if '_row_hash' in final_df.columns:
-            final_df = final_df.drop(columns=['_row_hash'])
+        # Limpar colunas auxiliares
+        cols_to_drop = ['_row_hash', '_temp_id', 'Selecionar']
+        final_df = final_df.drop(columns=[c for c in cols_to_drop if c in final_df.columns])
         
-        # 7. Salvar e atualizar session state
-        utils.save_data(final_df)
+        # 6. Salvar
+        utils.save_data_and_refresh_liquidas(final_df, st.session_state.income_df, st.session_state.settings)
         st.session_state.df = final_df
-        st.success("✅ Dados salvos com sucesso!")
+        st.success("✅ Dados salvos com sucesso! (Duplicação corrigida)")
         st.rerun()
 
 
@@ -1011,7 +1534,29 @@ with tab4:
         
         if not filtered_df.empty:
             categories_to_exclude = ['Pagamento/Crédito'] # Excluir pagamentos/faturas pagas da visualização de gastos
-            expenses_df = filtered_df[~filtered_df['category'].isin(categories_to_exclude)].copy()
+            
+            # --- NOVO: Excluir Categorias do Tipo "Meta" (Investimento/Guardado) ---
+            meta_categories = utils.get_meta_categories(settings)
+            
+            # Normalizar para lista de exclusão
+            if meta_categories:
+                categories_to_exclude.extend(meta_categories)
+            # -----------------------------------------------------------------------
+
+            # Criar cópia para manipulação segura
+            expenses_df = filtered_df.copy()
+            
+            # Normalizar categoria da transação para garantir match (strip)
+            if 'category' in expenses_df.columns:
+                 expenses_df['category'] = expenses_df['category'].astype(str).str.strip()
+
+            expenses_df = expenses_df[~expenses_df['category'].isin(categories_to_exclude)]
+            
+            # --- NOVO: Excluir Aplicações pelo Título (pois elas podem estar cadastradas em "Outros") ---
+            cond_aplica_dash = expenses_df['title'].astype(str).str.contains('aplica', case=False, na=False)
+            expenses_df = expenses_df[~cond_aplica_dash]
+            # -----------------------------------------------------------------------------------------
+            
             expenses_df = expenses_df[expenses_df['amount'] > 0] 
             
             total_gastos = expenses_df['amount'].sum()
@@ -1019,9 +1564,19 @@ with tab4:
             maior_categoria = expenses_df.groupby('category')['amount'].sum().idxmax() if not expenses_df.empty else "-"
             
             kpi1, kpi2, kpi3 = st.columns(3)
-            kpi1.metric("Total de Gastos", f"R$ {total_gastos:,.2f}")
-            kpi2.metric("Maior Categoria", maior_categoria)
-            kpi3.metric("Quantidade de Compras", qtde_compras)
+            
+            val_total = f"R$ {total_gastos:,.2f}"
+            val_maior = maior_categoria
+            val_qtde = qtde_compras
+            
+            if st.session_state.privacy_mode:
+                val_total = "****"
+                # val_maior = "****" # Categoria pode mostrar? Acho que sim.
+                val_qtde = "****"
+                
+            kpi1.metric("Total de Gastos", val_total)
+            kpi2.metric("Maior Categoria", val_maior)
+            kpi3.metric("Quantidade de Compras", val_qtde)
             
             # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             # SEÇÃO 1: ANÁLISE POR CATEGORIA
@@ -1043,6 +1598,11 @@ with tab4:
                     )
                     fig_pie.update_traces(textposition='inside', textinfo='percent+label')
                     fig_pie.update_layout(height=450)  # Maior altura
+                    
+                    # PRIVACY CHECK FOR CHART
+                    if st.session_state.privacy_mode:
+                        fig_pie.update_traces(textinfo='none', hoverinfo='none')
+                        
                     st.plotly_chart(fig_pie, use_container_width=True, key="dash_pie_chart")
                 else:
                     st.info("Sem gastos.")
@@ -1067,7 +1627,7 @@ with tab4:
                     
                     # Exibir tabela formatada SEM altura fixa para mostrar tudo
                     st.dataframe(
-                        category_summary,
+                        get_privacy_data(category_summary),
                         column_config={
                             "Categoria": st.column_config.TextColumn("Categoria", width="medium"),
                             "Total": st.column_config.NumberColumn(
@@ -1126,6 +1686,12 @@ with tab4:
                     height=300
                 )
                 fig_bar_top.update_traces(texttemplate='R$ %{x:,.2f}', textposition='outside')
+                
+                # PRIVACY CHECK FOR CHART
+                if st.session_state.privacy_mode:
+                    fig_bar_top.update_traces(textfont_color='rgba(0,0,0,0)', hoverinfo='none', hovertemplate=None)
+                    fig_bar_top.update_layout(xaxis=dict(showticklabels=False), yaxis=dict(showticklabels=True)) # Manter titulos (nomes) visiveis, esconder valores do eixo X
+                    
                 st.plotly_chart(fig_bar_top, use_container_width=True, key="dash_bar_top5")
             else:
                 st.info("Sem dados.")
@@ -1157,7 +1723,13 @@ with tab4:
                     height=350
                 )
                 fig_timeline.update_traces(texttemplate='R$ %{y:,.0f}', textposition='outside')
-                st.plotly_chart(fig_timeline, use_container_width=True, key="dash_daily_chart")
+            
+            # PRIVACY CHECK FOR CHART
+            if st.session_state.privacy_mode:
+                fig_timeline.update_traces(textfont_color='rgba(0,0,0,0)', hoverinfo='none', hovertemplate=None)
+                fig_timeline.update_layout(yaxis=dict(showticklabels=False), xaxis=dict(showticklabels=False))
+                
+            st.plotly_chart(fig_timeline, use_container_width=True, key="dash_daily_chart")
         else:
             st.warning("Nenhum dado encontrado para o período/pessoa selecionados.")
     else:
@@ -1192,9 +1764,18 @@ with tab5:
         current_df = full_df.copy()
         hidden_df = pd.DataFrame()
     
-    # Editor Tabela
-    edited_df = st.data_editor(
-       current_df,
+    # Editor Tabela (Ou DataFrame se Privacy Mode)
+    if st.session_state.privacy_mode:
+        st.info("🔒 Modo Privacidade Ativo: Edição desabilitada. Desative o olho para editar.")
+        st.dataframe(
+            get_privacy_data(current_df),
+            hide_index=True,
+            use_container_width=True
+        )
+        edited_df = current_df # Sem alterações possíveis
+    else:
+        edited_df = st.data_editor(
+           current_df,
         num_rows="dynamic",
         column_config={
             "Categoria": st.column_config.SelectboxColumn(
@@ -1322,6 +1903,26 @@ with tab5:
         
         real_series_graph = df_g[mask_g].groupby('category')['amount'].sum()
 
+    # --- INVESTIMENTO PARA METAS (Gráfico) ---
+    # Lê o valor assinado pré-computado de receitas_liquidas
+    investimento_mensal_graph = 0.0
+    try:
+        rec_liq_g = utils.load_receitas_liquidas()
+        if not rec_liq_g.empty:
+            target_col_rl = 'reference_date' if view_mode_global == "Mês de Referência" else 'date'
+            if target_col_rl not in rec_liq_g.columns: target_col_rl = 'date'
+            if not pd.api.types.is_datetime64_any_dtype(rec_liq_g[target_col_rl]):
+                rec_liq_g[target_col_rl] = pd.to_datetime(rec_liq_g[target_col_rl], format='mixed', errors='coerce')
+            
+            mask_rl = (rec_liq_g[target_col_rl].dt.month == sel_mon_graph) & (rec_liq_g[target_col_rl].dt.year == sel_year_graph)
+            mask_synth = rec_liq_g['source'].astype(str).str.contains('Aplicação RDB', na=False)
+            synth_rows = rec_liq_g[mask_rl & mask_synth]
+            if not synth_rows.empty and 'investimento_meta' in synth_rows.columns:
+                investimento_mensal_graph = synth_rows['investimento_meta'].sum()
+    except Exception:
+        pass
+    # --------------------------------------------------
+
     # 3. Cruzar Dados (Gráfico)
     all_cats_graph = set(monthly_budgets_graph.keys()) | set(real_series_graph.index)
     if sel_cats_graph:
@@ -1330,15 +1931,16 @@ with tab5:
     data_graph = []
     for cat in all_cats_graph:
         budget_info = monthly_budgets_graph.get(cat, {})
-        # Determinar Tipo (Se não tiver orçamento, assume Orçamento)
         cat_type = budget_info.get("Tipo", "Orçamento")
         
-        # FILTRO DE TIPO (Correção: Aplicar aqui para filtrar união de dados)
         if filter_type_graph != "Todos" and cat_type != filter_type_graph:
             continue
             
         meta_val = budget_info.get("Valor", 0.0)
         real_val = real_series_graph.get(cat, 0.0)
+        
+        if cat_type == "Meta":
+            real_val = investimento_mensal_graph
         
         data_graph.append({"Categoria": cat, "Meta": meta_val, "Realizado": real_val})
     
@@ -1352,12 +1954,19 @@ with tab5:
             title=f"Meta vs Realizado - {mon_dash_opts[sel_mon_graph]}/{sel_year_graph}",
             color_discrete_map={"Realizado": "#e74c3c", "Meta": "#2ecc71"}
         )
+        
+        
+        # PRIVACY CHECK FOR CHART
+        if st.session_state.privacy_mode:
+            fig_bar.update_traces(textfont_color='rgba(0,0,0,0)', hoverinfo='none', hovertemplate=None)
+            fig_bar.update_layout(yaxis=dict(showticklabels=False), xaxis=dict(showticklabels=False))
+            
         st.plotly_chart(fig_bar, use_container_width=True)
     else:
         st.info("Sem dados para o gráfico com os filtros selecionados.")
         
     st.divider()
-    
+
     # --- DASHBOARD DE ACOMPANHAMENTO (TABELA) ---
     st.subheader("📋 Tabela Detalhada")
     st.markdown("Analise os número exatos.")
@@ -1412,6 +2021,25 @@ with tab5:
         if owner_filter != "Todos" and 'owner' in df_t.columns: mask_t = mask_t & (df_t['owner'] == owner_filter)
         if sel_cats_table: mask_t = mask_t & (df_t['category'].isin(sel_cats_table))
         real_series_table = df_t[mask_t].groupby('category')['amount'].sum()
+        
+    # --- INVESTIMENTO PARA METAS (Tabela) ---
+    investimento_mensal_table = 0.0
+    try:
+        rec_liq_t = utils.load_receitas_liquidas()
+        if not rec_liq_t.empty:
+            target_col_rlt = 'reference_date' if view_mode_global == "Mês de Referência" else 'date'
+            if target_col_rlt not in rec_liq_t.columns: target_col_rlt = 'date'
+            if not pd.api.types.is_datetime64_any_dtype(rec_liq_t[target_col_rlt]):
+                rec_liq_t[target_col_rlt] = pd.to_datetime(rec_liq_t[target_col_rlt], format='mixed', errors='coerce')
+            
+            mask_rlt = (rec_liq_t[target_col_rlt].dt.month == sel_mon_table) & (rec_liq_t[target_col_rlt].dt.year == sel_year_table)
+            mask_synth_t = rec_liq_t['source'].astype(str).str.contains('Aplicação RDB', na=False)
+            synth_rows_t = rec_liq_t[mask_rlt & mask_synth_t]
+            if not synth_rows_t.empty and 'investimento_meta' in synth_rows_t.columns:
+                investimento_mensal_table = synth_rows_t['investimento_meta'].sum()
+    except Exception:
+        pass
+    # --------------------------------------------------
 
     # 3. Cruzar Dados (Tabela)
     all_cats_table = set(monthly_budgets_table.keys()) | set(real_series_table.index)
@@ -1422,29 +2050,34 @@ with tab5:
     for cat in all_cats_table:
         budget_info = monthly_budgets_table.get(cat, {})
         
-        # Determinar Tipo e Filtrar (Correção: Filtrar aqui)
         meta_type = budget_info.get("Tipo", "Orçamento")
         
         if filter_type_table != "Todos" and meta_type != filter_type_table:
             continue
             
         meta_val = budget_info.get("Valor", 0.0)
-        # meta_type já capturado acima
         
         real_val = real_series_table.get(cat, 0.0)
         
         # Logica baseada no Tipo
         if meta_type == "Meta":
-            # Meta de Ganho/Economia: BOM é Realizado >= Meta
-            diff = real_val - meta_val # Quanto passou da meta (Positivo = Bom)
+            # Valor ASSINADO: Aplicações - Resgates (pode ser negativo)
+            real_val = investimento_mensal_table
+            
+            diff = real_val - meta_val
             pct = (real_val / meta_val * 100) if meta_val > 0 else (100 if real_val > 0 else 0)
             
-            if real_val >= meta_val:
+            if real_val < 0:
+                # Resgatou mais do que investiu — MUITO distante da meta
+                status = f"🔴 Negativo (R$ {abs(real_val):,.2f} abaixo de zero)"
+            elif real_val >= meta_val:
                 status = "🟢 Atingida"
-            elif real_val >= meta_val * 0.9:
-                status = "🟡 Quase lá"
+            elif real_val >= meta_val * 0.7:
+                falta = meta_val - real_val
+                status = f"🟡 Faltam R$ {falta:,.2f}"
             else:
-                status = "🔴 Abaixo"
+                falta = meta_val - real_val
+                status = f"🔴 Faltam R$ {falta:,.2f}"
         else:
             # Orçamento de Gasto: BOM é Realizado <= Meta
             diff = meta_val - real_val # Quanto sobrou (Positivo = Bom)
@@ -1506,7 +2139,7 @@ with tab5:
         
         # Tabela Detalhada (Sem barra de progresso, apenas número formatado)
         st.dataframe(
-            df_table_comp,
+            get_privacy_data(df_table_comp),
             column_config={
                 "Meta": st.column_config.NumberColumn(format="R$ %.2f"),
                 "Realizado": st.column_config.NumberColumn(format="R$ %.2f"),
@@ -1536,8 +2169,8 @@ with tab6:
     st.header("🔮 Projeções Financeiras")
     st.markdown("Comparativo: **Renda Cadastrada (Aba Receitas)** vs **Gastos Reais**.")
     
-    # 1. Calcular Renda por Mês (Baseado na aba Receitas)
-    income_df = utils.load_income_data()
+    # 1. Calcular Renda por Mês (Baseado nas RECEITAS LÍQUIDAS pré-computadas)
+    income_df = utils.load_receitas_liquidas()
     income_by_month = pd.Series([0.0]*12, index=range(1, 13))
     
     
@@ -1546,23 +2179,35 @@ with tab6:
     with col_proj_filter:
          proj_year = st.number_input("Ano da Projeção", 2024, 2030, datetime.now().year, key="proj_year_input")
 
+    # Se receitas_liquidas estiver vazia, usar income_df bruto como fallback
+    if income_df.empty:
+        income_df = utils.load_income_data()
+
     if not income_df.empty:
         # Garantir datetime
         if not pd.api.types.is_datetime64_any_dtype(income_df['date']):
             income_df['date'] = pd.to_datetime(income_df['date'])
 
-        # Filtrar receitas do ano e DONO
-        income_df['year'] = income_df['date'].dt.year
-        income_df['month'] = income_df['date'].dt.month
-        
         # Filtro de Pessoa
         if owner_filter != "Todos":
              if 'owner' not in income_df.columns: income_df['owner'] = "Família"
              income_df = income_df[income_df['owner'] == owner_filter]
         
-        monthly_income = income_df[income_df['year'] == proj_year].groupby('month')['amount'].sum()
-        for m in monthly_income.index:
-            income_by_month[m] = monthly_income[m]
+        # DEFINIR QUAL DATA USAR
+        target_col_inc = 'reference_date' if view_mode_global == "Mês de Referência" else 'date'
+        
+        if target_col_inc not in income_df.columns:
+            target_col_inc = 'date'
+        
+        if not pd.api.types.is_datetime64_any_dtype(income_df[target_col_inc]):
+            income_df[target_col_inc] = pd.to_datetime(income_df[target_col_inc], errors='coerce')
+
+        # Agrupar pelo mês (os dados já estão limpos - sem resgates, com rendimento sintético)
+        monthly_income = income_df[income_df[target_col_inc].dt.year == proj_year].copy()
+        monthly_income_grouped = monthly_income.groupby(monthly_income[target_col_inc].dt.month)['amount'].sum()
+        
+        for m in monthly_income_grouped.index:
+            income_by_month[m] = monthly_income_grouped[m]
     
     # 2. Calcular Gastos Reais (Reference Date)
     real_expenses = pd.Series([0.0]*12, index=range(1, 13))
@@ -1582,14 +2227,37 @@ with tab6:
     # Prevenção de erro: Cria a coluna se não existir
     if 'reference_date' not in df_proj.columns:
          df_proj['reference_date'] = df_proj['date']
-         
-    # Define qual data usar baseado no filtro global
-    if view_mode_global == "Mês de Referência":
-        df_proj['calc_date'] = pd.to_datetime(df_proj['reference_date'], errors='coerce')
-    else:
-        df_proj['calc_date'] = pd.to_datetime(df_proj['date'], errors='coerce')
     
-    mask_exp = (df_proj['calc_date'].dt.year == proj_year) & (df_proj['category'] != 'Pagamento/Crédito') & (df_proj['amount'] > 0)
+    # Define qual data usar baseado no filtro global (CORREÇÃO APLICADA)
+    target_col_proj = 'reference_date' if view_mode_global == "Mês de Referência" else 'date'
+    
+    # Fallback de segurança
+    if target_col_proj not in df_proj.columns:
+         target_col_proj = 'date'
+
+    df_proj['calc_date'] = pd.to_datetime(df_proj[target_col_proj], errors='coerce')
+    
+    # Normalizar Categoria (Strip) para Filtro de Despesas
+    if 'category' in df_proj.columns:
+        df_proj['category'] = df_proj['category'].astype(str).str.strip()
+
+    meta_categories = utils.get_meta_categories(st.session_state.settings)
+    
+    # Filtrar: 
+    # 1. Ano correto
+    # 2. Não é Pagamento de Fatura (duplicidade)
+    # 3. Valor positivo (gasto)
+    # 4. NÃO é categoria de "Meta" (dinheiro guardado, não gasto)
+    # 5. NÃO contém a palavra "aplica" no título (investimentos cadastrados como Outros)
+    
+    # Construindo as máscaras condicionalmente
+    cond_calc_date = (df_proj['calc_date'].dt.year == proj_year)
+    cond_not_credit = (df_proj['category'] != 'Pagamento/Crédito')
+    cond_positive = (df_proj['amount'] > 0)
+    cond_not_meta = ~df_proj['category'].isin(meta_categories) if meta_categories else pd.Series(True, index=df_proj.index)
+    cond_not_aplica = ~df_proj['title'].astype(str).str.contains('aplica', case=False, na=False)
+    
+    mask_exp = cond_calc_date & cond_not_credit & cond_positive & cond_not_meta & cond_not_aplica
     
     # Filtro opcional de dono
     if owner_filter != "Todos": 
@@ -1621,9 +2289,19 @@ with tab6:
     total_balance_year = total_income_year - total_expenses_year
     
     col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
-    col_kpi1.metric("Receita Total (Ano)", f"R$ {total_income_year:,.2f}")
-    col_kpi2.metric("Despesa Total (Ano)", f"R$ {total_expenses_year:,.2f}")
-    col_kpi3.metric("Saldo Líquido (Ano)", f"R$ {total_balance_year:,.2f}", delta_color="normal")
+    
+    str_inc = f"R$ {total_income_year:,.2f}"
+    str_exp = f"R$ {total_expenses_year:,.2f}"
+    str_bal = f"R$ {total_balance_year:,.2f}"
+    
+    if st.session_state.privacy_mode:
+        str_inc = "****"
+        str_exp = "****"
+        str_bal = "****"
+    
+    col_kpi1.metric("Receita Total (Ano)", str_inc)
+    col_kpi2.metric("Despesa Total (Ano)", str_exp)
+    col_kpi3.metric("Saldo Líquido (Ano)", str_bal, delta_color="normal")
     
     st.divider()
     
@@ -1640,13 +2318,18 @@ with tab6:
     
     fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
     
+    # PRIVACY CHECK FOR CHART
+    if st.session_state.privacy_mode:
+        fig.update_traces(textfont_color='rgba(0,0,0,0)', hoverinfo='none', hovertemplate=None)
+        fig.update_layout(yaxis=dict(showticklabels=False), xaxis=dict(showticklabels=False)) # Esconder eixos X e Y
+    
     st.plotly_chart(fig, use_container_width=True, key=f"proj_chart_{proj_year}_{owner_filter}")
     
-    st.dataframe(proj_data.style.format({
-        "Entradas (R$)": "R$ {:,.2f}",
-        "Saídas (R$)": "R$ {:,.2f}",
-        "Saldo (R$)": "R$ {:,.2f}",
-        "Acumulado (R$)": "R$ {:,.2f}"
-    }), use_container_width=True)
+    st.dataframe(get_privacy_data(proj_data), column_config={
+        "Entradas (R$)": st.column_config.NumberColumn(format="R$ %.2f"),
+        "Saídas (R$)": st.column_config.NumberColumn(format="R$ %.2f"),
+        "Saldo (R$)": st.column_config.NumberColumn(format="R$ %.2f"),
+        "Acumulado (R$)": st.column_config.NumberColumn(format="R$ %.2f")
+    }, use_container_width=True)
 
 

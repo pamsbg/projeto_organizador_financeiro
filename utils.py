@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, date
 
 import gsheets
+import streamlit as st
 
 SETTINGS_FILE = "settings.json"  # Fallback local apenas
 
@@ -199,6 +200,18 @@ def get_budgets_for_date(settings, target_date, owner=None):
             
     return final_budget
 
+
+
+def get_meta_categories(settings):
+    """Retorna uma lista de categorias que são do tipo 'Meta'."""
+    df = settings.get("budgets_df", pd.DataFrame())
+    if df.empty or "Tipo" not in df.columns:
+        return []
+        
+    raw_cats = df[df["Tipo"] == "Meta"]["Categoria"].unique().tolist()
+    # GARANTIR que não haja espaços em branco extras atrapalhando a comparação
+    return [c.strip() for c in raw_cats if isinstance(c, str)]
+
 def load_data():
     """Carrega os dados da planilha Google Sheets ou cria um DataFrame vazio."""
     try:
@@ -207,17 +220,16 @@ def load_data():
         if df.empty:
             return create_empty_dataframe()
         
-        # Converter colunas de data com format='mixed' para suportar variações
+        # Converter colunas de data - SEMPRE manter como Timestamp (nunca usar .dt.date)
         if 'date' in df.columns:
-            df['date'] = pd.to_datetime(df['date'], format='mixed', errors='coerce').dt.date
+            df['date'] = pd.to_datetime(df['date'], format='mixed', errors='coerce')
         
-
         # Garantir coluna reference_date
         if 'reference_date' not in df.columns:
             if 'date' in df.columns:
                  df['reference_date'] = df['date']
         else:
-             df['reference_date'] = pd.to_datetime(df['reference_date'], format='mixed', errors='coerce').dt.date
+             df['reference_date'] = pd.to_datetime(df['reference_date'], format='mixed', errors='coerce')
 
         # Garantir coluna ID
         if 'id' not in df.columns:
@@ -251,12 +263,31 @@ def create_empty_dataframe():
 
 def save_data(df):
     """Salva o DataFrame na planilha Google Sheets."""
-    # Garantir que não salvamos colunas auxiliares
-    # Garantir que não salvamos colunas auxiliares
-    # dedup_idx removido do código
-
-    
     gsheets.write_dataframe_to_sheet(df, gsheets.BASE_FINANCEIRA_ID)
+
+
+def save_data_and_refresh_liquidas(transactions_df, income_df=None, settings=None):
+    """
+    Salva transações brutas E recalcula/salva transações líquidas + receitas líquidas.
+    Receitas líquidas também dependem das transações (aplicações estão lá).
+    """
+    save_data(transactions_df)
+    
+    try:
+        if income_df is None:
+            income_df = load_income_data()
+        if settings is None:
+            settings = load_settings()
+        
+        # Recalcular transações líquidas
+        trans_liq = compute_transacoes_liquidas(transactions_df, settings)
+        save_transacoes_liquidas(trans_liq)
+        
+        # Recalcular receitas líquidas (aplicações vêm das transações!)
+        rec_liq = compute_receitas_liquidas(income_df, transactions_df, settings)
+        save_receitas_liquidas(rec_liq)
+    except Exception as e:
+        print(f"Aviso: não foi possível atualizar dados líquidos: {e}")
 
 def load_income_data():
     """Carrega dados de receitas do Google Sheets ou cria vazio."""
@@ -266,15 +297,16 @@ def load_income_data():
         if df.empty:
             return _create_empty_income_df()
         
+        # Converter datas - SEMPRE manter como Timestamp
         if 'date' in df.columns:
-            df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
+            df['date'] = pd.to_datetime(df['date'], format='mixed', errors='coerce')
 
         # Garante coluna reference_date
         if 'reference_date' not in df.columns:
              if 'date' in df.columns:
                  df['reference_date'] = df['date']
         else:
-             df['reference_date'] = pd.to_datetime(df['reference_date'], errors='coerce').dt.date
+             df['reference_date'] = pd.to_datetime(df['reference_date'], format='mixed', errors='coerce')
         
         # Garante coluna owner
         if 'owner' not in df.columns:
@@ -310,6 +342,250 @@ def _create_empty_income_df():
 def save_income_data(df):
     """Salva dados de receitas no Google Sheets."""
     gsheets.write_dataframe_to_sheet(df, gsheets.RECEITAS_ID)
+
+
+def save_income_and_refresh_liquidas(income_df, transactions_df=None, settings=None):
+    """
+    Salva receitas brutas E recalcula/salva receitas líquidas.
+    Usar SEMPRE que modificar receitas para manter tudo sincronizado.
+    """
+    save_income_data(income_df)
+    
+    # Recalcular líquidas se temos os dados necessários
+    try:
+        if transactions_df is None:
+            transactions_df = load_data()
+        if settings is None:
+            settings = load_settings()
+        
+        rec_liq = compute_receitas_liquidas(income_df, transactions_df, settings)
+        save_receitas_liquidas(rec_liq)
+    except Exception as e:
+        print(f"Aviso: não foi possível atualizar receitas líquidas: {e}")
+
+
+# ============================================================
+# RECEITAS LÍQUIDAS E TRANSAÇÕES LÍQUIDAS
+# ============================================================
+
+def compute_receitas_liquidas(income_df, transactions_df, settings):
+    """
+    Calcula as receitas líquidas a partir dos dados brutos.
+    - Exclui resgates individuais
+    - Adiciona linhas sintéticas 'Aplicação RDB - Resgate RDB' POR MÊS
+      com o rendimento líquido calculado a partir das datas reais.
+    
+    Returns:
+        DataFrame com receitas líquidas
+    """
+    if income_df.empty:
+        return income_df
+    
+    result = income_df.copy()
+    
+    # Garantir datetime nas colunas de data
+    for col in ['date', 'reference_date']:
+        if col in result.columns:
+            result[col] = pd.to_datetime(result[col], format='mixed', errors='coerce')
+    
+    # Usar reference_date para agrupamento (fallback: date)
+    ref_col = 'reference_date' if 'reference_date' in result.columns else 'date'
+    
+    # 1. Separar resgates e agrupar por ano-mês
+    mask_resgate = result['source'].astype(str).str.contains('resgate', case=False, na=False)
+    resgates_df = result[mask_resgate].copy()
+    
+    # Remover resgates individuais do resultado
+    result = result[~mask_resgate].copy()
+    
+    # Agrupar resgates por ano-mês
+    resgates_por_mes = {}
+    if not resgates_df.empty:
+        resgates_df['_ym'] = resgates_df[ref_col].dt.to_period('M')
+        resgates_por_mes = resgates_df.groupby('_ym')['amount'].sum().to_dict()
+    
+    # 2. Calcular aplicações por mês (filtro ESTRITO: "Aplicação RDB")
+    aplicacoes_por_mes = {}
+    if not transactions_df.empty:
+        trans = transactions_df.copy()
+        for col in ['date', 'reference_date']:
+            if col in trans.columns:
+                trans[col] = pd.to_datetime(trans[col], format='mixed', errors='coerce')
+        
+        ref_col_trans = 'reference_date' if 'reference_date' in trans.columns else 'date'
+        
+        cond_title = trans['title'].astype(str).str.contains(
+            r'aplica[çc][ãa]o\s+rdb', case=False, na=False, regex=True
+        )
+        aplic_df = trans[cond_title].copy()
+        
+        if not aplic_df.empty:
+            aplic_df['_ym'] = aplic_df[ref_col_trans].dt.to_period('M')
+            aplicacoes_por_mes = aplic_df.groupby('_ym')['amount'].sum().to_dict()
+    
+    # 3. Calcular rendimento líquido POR MÊS e criar linhas sintéticas
+    all_months = set(list(resgates_por_mes.keys()) + list(aplicacoes_por_mes.keys()))
+    
+    synth_rows = []
+    for ym in sorted(all_months):
+        aplic_m = aplicacoes_por_mes.get(ym, 0)
+        resgat_m = resgates_por_mes.get(ym, 0)
+        rendimento_receita = abs(aplic_m - resgat_m)    # Receitas: sempre positivo
+        investimento_meta = aplic_m - resgat_m           # Metas: assinado
+        
+        if rendimento_receita > 0 or aplic_m > 0 or resgat_m > 0:
+            month_date = ym.to_timestamp()
+            synth_rows.append({
+                "date": month_date,
+                "reference_date": month_date,
+                "source": "Aplicação RDB - Resgate RDB",
+                "amount": rendimento_receita,
+                "investimento_meta": investimento_meta,
+                "type": "Extra",
+                "recurrence": "Única",
+                "owner": "Família"
+            })
+    
+    if synth_rows:
+        synth_df = pd.DataFrame(synth_rows)
+        result = pd.concat([synth_df, result], ignore_index=True)
+    
+    # Garantir coluna investimento_meta em todas as linhas (0 para não-sintéticas)
+    if 'investimento_meta' not in result.columns:
+        result['investimento_meta'] = 0.0
+    result['investimento_meta'] = result['investimento_meta'].fillna(0.0)
+    
+    return result
+
+
+def compute_investimento_mensal(income_df, transactions_df, month, year, view_mode="date"):
+    """
+    Calcula o investimento líquido ASSINADO para um mês específico.
+    Retorna: abs(aplicações) - resgates
+    - Positivo: investiu mais do que resgatou (BOM para meta)
+    - Negativo: resgatou mais do que investiu (RUIM para meta)
+    """
+    ref_col = 'reference_date' if view_mode == "Mês de Referência" else 'date'
+    
+    # Calcular resgates do mês
+    total_resgate = 0.0
+    if not income_df.empty:
+        inc = income_df.copy()
+        for col in ['date', 'reference_date']:
+            if col in inc.columns:
+                inc[col] = pd.to_datetime(inc[col], format='mixed', errors='coerce')
+        use_col = ref_col if ref_col in inc.columns else 'date'
+        mask_resgate = inc['source'].astype(str).str.contains('resgate', case=False, na=False)
+        mask_date = (inc[use_col].dt.month == month) & (inc[use_col].dt.year == year)
+        total_resgate = inc[mask_resgate & mask_date]['amount'].sum()
+    
+    # Calcular aplicações do mês (já são positivos no DF de transações)
+    total_aplicacao = 0.0
+    if not transactions_df.empty:
+        trans = transactions_df.copy()
+        for col in ['date', 'reference_date']:
+            if col in trans.columns:
+                trans[col] = pd.to_datetime(trans[col], format='mixed', errors='coerce')
+        use_col_t = ref_col if ref_col in trans.columns else 'date'
+        cond = trans['title'].astype(str).str.contains(
+            r'aplica[çc][ãa]o\s+rdb', case=False, na=False, regex=True
+        )
+        mask_dt = (trans[use_col_t].dt.month == month) & (trans[use_col_t].dt.year == year)
+        total_aplicacao = trans[cond & mask_dt]['amount'].sum()
+    
+    # Investimento assinado: abs(aplicação) - resgate
+    return total_aplicacao - total_resgate
+
+
+def compute_transacoes_liquidas(transactions_df, settings):
+    """
+    Calcula as transações líquidas (exclui Aplicações e Metas das despesas).
+    
+    Args:
+        transactions_df: DataFrame de transações brutas
+        settings: Configurações do sistema
+    
+    Returns:
+        DataFrame com transações líquidas (sem aplicações/metas)
+    """
+    if transactions_df.empty:
+        return transactions_df
+    
+    result = transactions_df.copy()
+    
+    # Excluir categorias Meta
+    meta_cats = get_meta_categories(settings)
+    cond_meta = result['category'].isin(meta_cats) if meta_cats else pd.Series(False, index=result.index)
+    
+    # Excluir transações com título "Aplicação RDB" (investimento, não despesa)
+    cond_title = result['title'].astype(str).str.contains('aplica', case=False, na=False)
+    
+    # Manter apenas as que NÃO são Meta nem Aplicação
+    result = result[~(cond_meta | cond_title)].copy()
+    
+    return result
+
+
+def save_receitas_liquidas(df):
+    """Salva receitas líquidas na planilha Google Sheets."""
+    gsheets.write_dataframe_to_sheet(df, gsheets.RECEITAS_LIQUIDAS_ID)
+
+
+def save_transacoes_liquidas(df):
+    """Salva transações líquidas na planilha Google Sheets."""
+    gsheets.write_dataframe_to_sheet(df, gsheets.TRANSACOES_LIQUIDAS_ID)
+
+
+def load_receitas_liquidas():
+    """Carrega receitas líquidas do Google Sheets."""
+    try:
+        df = gsheets.read_sheet_as_dataframe(gsheets.RECEITAS_LIQUIDAS_ID)
+        if df.empty:
+            return _create_empty_income_df()
+        
+        # Manter como Timestamp (não converter para .date) para compatibilidade com Projeções
+        if 'date' in df.columns:
+            df['date'] = pd.to_datetime(df['date'], format='mixed', errors='coerce')
+        if 'reference_date' in df.columns:
+            df['reference_date'] = pd.to_datetime(df['reference_date'], format='mixed', errors='coerce')
+        if 'owner' not in df.columns:
+            df['owner'] = "Família"
+        if 'amount' in df.columns:
+            df['amount'] = pd.to_numeric(df['amount'], errors='coerce').fillna(0.0)
+        if 'investimento_meta' in df.columns:
+            df['investimento_meta'] = pd.to_numeric(df['investimento_meta'], errors='coerce').fillna(0.0)
+        else:
+            df['investimento_meta'] = 0.0
+        
+        text_cols = ['source', 'type', 'recurrence', 'owner']
+        for col in text_cols:
+            if col in df.columns:
+                df[col] = df[col].astype(str).replace('nan', '').replace('None', '')
+        
+        return df
+    except Exception as e:
+        print(f"Erro ao carregar receitas líquidas: {e}")
+        return _create_empty_income_df()
+
+
+def load_transacoes_liquidas():
+    """Carrega transações líquidas do Google Sheets."""
+    try:
+        df = gsheets.read_sheet_as_dataframe(gsheets.TRANSACOES_LIQUIDAS_ID)
+        if df.empty:
+            return create_empty_dataframe()
+        
+        if 'date' in df.columns:
+            df['date'] = pd.to_datetime(df['date'], format='mixed', errors='coerce')
+        if 'reference_date' in df.columns:
+            df['reference_date'] = pd.to_datetime(df['reference_date'], format='mixed', errors='coerce')
+        if 'amount' in df.columns:
+            df['amount'] = pd.to_numeric(df['amount'], errors='coerce').fillna(0.0)
+        
+        return df
+    except Exception as e:
+        print(f"Erro ao carregar transações líquidas: {e}")
+        return create_empty_dataframe()
 
 def categorize_transaction(title):
     """Categoriza a transação com base no título, usando regras refinadas."""
@@ -600,10 +876,34 @@ def process_uploaded_file(uploaded_file, reference_date=None, owner="Família"):
                 expense_rows['amount'] = expense_rows['amount'].abs()
                 expenses_data = expense_rows
         else:
-            # Fatura / Padrão: Tudo é Despesa
-            # Se vier negativo, converte pra positivo (comum em alguns csvs)
-            new_df['amount'] = new_df['amount'].abs()
-            expenses_data = new_df
+            # Fatura / Padrão: 
+            # Valores POSITIVOS = Despesa
+            # Valores NEGATIVOS = Estorno/Crédito = Receita
+            
+            # 1. Identificar Receitas (Negativos)
+            income_rows = new_df[new_df['amount'] < 0].copy()
+            
+            if not income_rows.empty:
+                income_rows['amount'] = income_rows['amount'].abs() # Converter para positivo
+                income_rows['source'] = income_rows['title']
+                income_rows['type'] = 'Extra' # Classificar como Extra/Estorno
+                income_rows['recurrence'] = 'Única'
+                income_rows['owner'] = owner
+                
+                # Remover title
+                income_rows = income_rows.drop(columns=['title'])
+                
+                # Definir data de referência
+                if reference_date:
+                    income_rows['reference_date'] = reference_date
+                else:
+                    income_rows['reference_date'] = income_rows['date']
+                    
+                income_data = income_rows
+
+            # 2. Identificar Despesas (Positivos)
+            expense_rows = new_df[new_df['amount'] >= 0].copy()
+            expenses_data = expense_rows
             
         # --- Enriquecer Despesas ---
         final_expenses = pd.DataFrame()
@@ -715,3 +1015,16 @@ def load_excel_projections(file_path):
             
     except Exception as e:
         return None, str(e)
+    return df
+
+
+@st.cache_resource(ttl=3600)
+def load_ml_history_cached():
+    """
+    Carrega histórico de aprendizado ML (Cacheado aqui para evitar problemas de escopo no app.py).
+    """
+    try:
+        return gsheets.read_classification_dataset()
+    except Exception as e:
+        print(f"Erro ao carregar memória do Mágico (utils): {e}")
+        return pd.DataFrame()

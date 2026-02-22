@@ -25,6 +25,9 @@ import json
 BASE_FINANCEIRA_ID = "173UZUPU5GXATVkaGGnIaDwJmd1r11YxXutNFxD5uCVs"
 RECEITAS_ID = "1ZTEqYxGAJGkanYOWKw7-WftiXeIqEc882wrD_ClPX9s"
 SETTINGS_ID = "1p1T_SFfmoNUQWDx17DqII8cNOuDsSdDnznk29SCKO6g"
+CLASSIFICATION_ID = "1ebSYov3JxNrrfMeCTFao-UD_ohZ3gG_k9quTnEwsZc4"
+RECEITAS_LIQUIDAS_ID = "1yCIzLZNOL5QHXHtuFckAcxoImJ9Pl6VdCwZPWQOn5Pc"
+TRANSACOES_LIQUIDAS_ID = "18XQoRxyR8V8kpiL2JxtPQV15H0DHkKnQvhpdyHCHfFw"
 
 # Escopos necessários para leitura e escrita
 SCOPES = [
@@ -166,7 +169,11 @@ def write_dataframe_to_sheet(df, spreadsheet_id, sheet_index=0):
     # Converter tudo para string para evitar erros de serialização
     df_str = df.copy()
     for col in df_str.columns:
-        df_str[col] = df_str[col].astype(str).replace("nan", "").replace("None", "").replace("NaT", "")
+        # Normalizar datas para formato consistente YYYY-MM-DD
+        if pd.api.types.is_datetime64_any_dtype(df_str[col]):
+            df_str[col] = df_str[col].dt.strftime('%Y-%m-%d').fillna('')
+        else:
+            df_str[col] = df_str[col].astype(str).replace("nan", "").replace("None", "").replace("NaT", "")
     
     # Montar dados: header + linhas
     data = [df_str.columns.tolist()] + df_str.values.tolist()
@@ -296,4 +303,41 @@ def save_budgets(df, spreadsheet_id=SETTINGS_ID):
     
     data = [df_save.columns.tolist()] + df_save.values.tolist()
     ws.update(data, value_input_option="RAW")
+
+
+@retry_on_quota()
+def read_classification_dataset(spreadsheet_id=CLASSIFICATION_ID):
+    """Lê o dataset de treinamento da aba 'classificacao_categoria'."""
+    client = get_gspread_client()
+    spreadsheet = client.open_by_key(spreadsheet_id)
+    ws = _get_or_create_worksheet(spreadsheet, "classificacao_categoria")
+    
+    records = ws.get_all_records()
+    if not records:
+        return pd.DataFrame(columns=["Descricao", "Categoria"])
+    
+    df = pd.DataFrame(records)
+    # Garantir colunas
+    if "Descricao" not in df.columns: df["Descricao"] = ""
+    if "Categoria" not in df.columns: df["Categoria"] = ""
+    if "Data" not in df.columns: df["Data"] = ""
+    if "Valor" not in df.columns: df["Valor"] = 0.0
+            
+    return df[["Descricao", "Categoria", "Data", "Valor"]]
+
+@retry_on_quota()
+def append_classification(description, category, amount=None, date=None, spreadsheet_id=CLASSIFICATION_ID):
+    """Adiciona um novo exemplo de treinamento na aba 'classificacao_categoria'."""
+    client = get_gspread_client()
+    spreadsheet = client.open_by_key(spreadsheet_id)
+    ws = _get_or_create_worksheet(spreadsheet, "classificacao_categoria")
+    
+    # Se a aba estiver vazia, adicionar header
+    if not ws.get_all_values():
+        ws.append_row(["Descricao", "Categoria", "Data", "Valor"])
+        
+    val_amount = str(amount).replace(".", ",") if amount is not None else ""
+    val_date = str(date) if date is not None else ""
+        
+    ws.append_row([str(description), str(category), val_date, val_amount])
 
