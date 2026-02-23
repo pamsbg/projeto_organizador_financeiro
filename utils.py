@@ -321,6 +321,10 @@ def load_income_data():
         # Converter amount para numérico
         if 'amount' in df.columns:
             df['amount'] = pd.to_numeric(df['amount'], errors='coerce').fillna(0.0)
+            
+        # Varrer dados corrompidos: Remover linhas sintéticas salvas indevidamente
+        if 'source' in df.columns:
+            df = df[df['source'] != "Aplicação RDB - Resgate RDB"]
         
         return df
     except Exception as e:
@@ -936,18 +940,40 @@ def merge_and_save(current_df, new_df):
     """Mescla novos dados de DESPESAS com os atuais."""
     if new_df.empty: return current_df, 0
     
+    # Gerar ID temporário para identificação
     if not current_df.empty and 'id' not in current_df.columns:
         current_df['id'] = current_df.apply(generate_id, axis=1)
         
-    existing_ids = set(current_df['id'].values) if not current_df.empty else set()
+    # Usar HASH baseado em conteúdo para deduplicação robusta
+    def get_hash(row):
+        return hash((str(row.get('date', '')), str(row.get('title', '')), str(row.get('amount', '')), str(row.get('owner', ''))))
+        
+    if not current_df.empty:
+        current_hashes = set(current_df.apply(get_hash, axis=1))
+    else:
+        current_hashes = set()
+        
+    to_add = []
+    duplicates = 0
     
-    unique_new = new_df[~new_df['id'].isin(existing_ids)]
-    duplicates = len(new_df) - len(unique_new)
-    
-    if not unique_new.empty:
-        combined = pd.concat([current_df, unique_new], ignore_index=True)
+    for _, row in new_df.iterrows():
+        h = get_hash(row)
+        if h not in current_hashes:
+            to_add.append(row)
+            current_hashes.add(h) # Previne duplicação dentro do próprio arquivo
+        else:
+            duplicates += 1
+            
+    if to_add:
+        # Se os itens a adicionar não tiverem UUID gerado ainda
+        new_rows_df = pd.DataFrame(to_add)
+        if 'id' not in new_rows_df.columns:
+            new_rows_df['id'] = [str(uuid.uuid4()) for _ in range(len(new_rows_df))]
+            
+        combined = pd.concat([current_df, new_rows_df], ignore_index=True)
         save_data(combined)
         return combined, duplicates
+        
     return current_df, duplicates
 
 def merge_and_save_income(current_income, new_income):

@@ -397,8 +397,8 @@ with st.sidebar:
             time.sleep(1.5)
             st.rerun()
 
-# Criar Abas (Ordem Solicitada: Receitas, Importar, Transações, Dashboard, Planejamento, Projeções)
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💰 Receitas", "📥 Importar", "📝 Transações", "📊 Dashboard", "🎯 Metas", "🔮 Projeções"])
+# Criar Abas (Ordem Solicitada: 1 - Importar, 2 - Receitas, 3 - Transações, 4 - Projeções, 5 - Dashboard , 6 - Metas)
+tab2, tab1, tab3, tab6, tab4, tab5 = st.tabs(["📥 Importar", "💰 Receitas", "📝 Transações", "🔮 Projeções", "📊 Dashboard", "🎯 Metas"])
 
 # --- ABA 1: RECEITAS (NOVO LOCAL) ---
 with tab1:
@@ -478,12 +478,10 @@ with tab1:
         if selected_year_rec != 0: mask_aplic &= (df_aplic[date_col_aplic].dt.year == selected_year_rec)
         if owner_filter != "Todos" and 'owner' in df_aplic.columns: mask_aplic &= (df_aplic['owner'] == owner_filter)
         
-        # Encontrar aplicações (Categoria Investimento/Meta ou titulo aplica)
-        meta_cats = utils.get_meta_categories(st.session_state.settings)
-        cond_meta = df_aplic['category'].isin(meta_cats) if meta_cats else pd.Series(False, index=df_aplic.index)
+        # Encontrar aplicações (Estruturado estritamente apenas para Aplicação RDB)
         cond_title = df_aplic['title'].astype(str).str.contains(r'aplica[çc][ãa]o\s+rdb', case=False, na=False, regex=True)
         
-        mask_aplic &= (cond_meta | cond_title)
+        mask_aplic &= cond_title
         total_aplicado_rec = df_aplic[mask_aplic]['amount'].sum()
         
     total_resgatado_rec = 0.0
@@ -728,6 +726,11 @@ with tab1:
         # Preservar se pertence a pessoa diferente
         if owner_filter != "Todos":
             mask_keep = mask_keep | (full_income['owner'] != owner_filter)
+            
+        # [CORREÇÃO CRÍTICA]: Preservar INCONDICIONALMENTE os resgates invisíveis da tabela
+        # Como o Resgate não aparece no `display_income`, se ele não for protegido aqui
+        # o algoritmo deduzirá que o usuário apagou ele e destruirá o banco inteiro!
+        mask_keep = mask_keep | (full_income['source'].astype(str).str.contains('resgate', case=False, na=False))
         
         untouched_income = full_income[mask_keep].copy()
         
@@ -773,9 +776,15 @@ with tab1:
             # Vazio = só manter untouched
             final_income = untouched_income.copy()
         
-        # 6. Limpar _temp_id antes de salvar
+        # 6. Limpar _temp_id e IGNORAR linhas sintéticas antes de salvar
         if '_temp_id' in final_income.columns:
+            # Nunca salva o ID temporário do Pandas DataFrame no CSV
+            final_income = final_income[final_income['_temp_id'] != "SYNTHETIC_ROW_DO_NOT_EDIT"]
             final_income = final_income.drop(columns=['_temp_id'])
+            
+        # Reforço extra: Garantir que 'Aplicação RDB - Resgate RDB' não passe
+        if 'source' in final_income.columns:
+            final_income = final_income[final_income['source'] != "Aplicação RDB - Resgate RDB"]
         
         # 7. Salvar
         # 7. Salvar e Atualizar Session State

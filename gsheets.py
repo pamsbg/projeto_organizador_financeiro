@@ -86,13 +86,75 @@ def get_gspread_client():
     return client
 
 import time
+import threading
+import collections
 from functools import wraps
 from gspread.exceptions import APIError
 
-def retry_on_quota(max_retries=5, initial_delay=2):
+# --- SLIDING WINDOW RATE LIMITER ---
+# O Google Sheets tem limite de 60 reads/minuto/usuário.
+# Em vez de um delay fixo entre cada chamada (que torna tudo lento),
+# usamos uma janela deslizante que permite rajadas rápidas e só freia
+# quando estamos próximos do limite.
+_api_lock = threading.Lock()
+_call_timestamps = collections.deque()
+_WINDOW_SIZE = 60   # janela de 60 segundos (quota reseta por minuto)
+_MAX_CALLS = 55     # limite conservador (quota real = 60)
+
+def _throttle_api():
+    """Sliding window rate limiter: permite rajadas, freia perto do limite."""
+    with _api_lock:
+        now = time.time()
+        # Limpar chamadas fora da janela de 60s
+        while _call_timestamps and _call_timestamps[0] < now - _WINDOW_SIZE:
+            _call_timestamps.popleft()
+        
+        # Se perto do limite, esperar até a chamada mais antiga sair da janela
+        if len(_call_timestamps) >= _MAX_CALLS:
+            wait_until = _call_timestamps[0] + _WINDOW_SIZE + 0.1
+            wait = wait_until - now
+            if wait > 0:
+                time.sleep(wait)
+                # Limpar novamente após a espera
+                now = time.time()
+                while _call_timestamps and _call_timestamps[0] < now - _WINDOW_SIZE:
+                    _call_timestamps.popleft()
+        
+        _call_timestamps.append(time.time())
+
+# --- CACHE DE SPREADSHEETS ---
+# Evita chamar client.open_by_key() repetidamente para a mesma planilha.
+_spreadsheet_cache = {}
+_spreadsheet_cache_time = {}
+_SPREADSHEET_CACHE_TTL = 300  # 5 minutos
+
+def _get_spreadsheet(client, spreadsheet_id):
+    """Retorna spreadsheet do cache ou abre e cacheia."""
+    now = time.time()
+    cached_time = _spreadsheet_cache_time.get(spreadsheet_id, 0)
+    
+    if spreadsheet_id in _spreadsheet_cache and (now - cached_time) < _SPREADSHEET_CACHE_TTL:
+        return _spreadsheet_cache[spreadsheet_id]
+    
+    _throttle_api()
+    spreadsheet = client.open_by_key(spreadsheet_id)
+    _spreadsheet_cache[spreadsheet_id] = spreadsheet
+    _spreadsheet_cache_time[spreadsheet_id] = now
+    return spreadsheet
+
+def _invalidate_spreadsheet_cache(spreadsheet_id=None):
+    """Invalida o cache de uma planilha específica ou de todas."""
+    if spreadsheet_id:
+        _spreadsheet_cache.pop(spreadsheet_id, None)
+        _spreadsheet_cache_time.pop(spreadsheet_id, None)
+    else:
+        _spreadsheet_cache.clear()
+        _spreadsheet_cache_time.clear()
+
+def retry_on_quota(max_retries=5, initial_delay=5):
     """
     Decorator para tentar novamente em caso de erro de cota (429).
-    Backoff exponencial: 2s, 4s, 8s, 16s, 32s.
+    Backoff exponencial: 5s, 10s, 20s, 40s, 60s.
     """
     def decorator(func):
         @wraps(func)
@@ -103,21 +165,23 @@ def retry_on_quota(max_retries=5, initial_delay=2):
                     return func(*args, **kwargs)
                 except APIError as e:
                     # Verifica se é erro 429 (Too Many Requests)
-                    # gspread APIError tem response.status_code? O erro impresso mostra [429]
                     is_429 = False
                     if hasattr(e, 'response') and hasattr(e.response, 'status_code') and e.response.status_code == 429:
                         is_429 = True
-                    # Às vezes o status code vem no args[0]
                     if not is_429 and '429' in str(e):
                         is_429 = True
                         
                     if is_429:
+                        # Invalidar cache de spreadsheets (pode estar stale)
+                        _invalidate_spreadsheet_cache()
+                        
                         if attempt == max_retries - 1:
                             st.error("⚠️ O Google Sheets está sobrecarregado (Muitas requisições). Tente novamente em 1 minuto.")
                             raise
                         
-                        st.toast(f"⏳ Cota do Google atingida. Aguardando {delay}s para tentar novamente... ({attempt+1}/{max_retries})")
-                        time.sleep(delay)
+                        effective_delay = min(delay, 60)  # Cap em 60s
+                        st.toast(f"⏳ Cota do Google atingida. Aguardando {effective_delay}s... ({attempt+1}/{max_retries})")
+                        time.sleep(effective_delay)
                         delay *= 2
                     else:
                         raise
@@ -133,12 +197,16 @@ def read_sheet_as_dataframe(spreadsheet_id, sheet_index=0):
     e retorna como pandas DataFrame.
     """
     client = get_gspread_client()
-    spreadsheet = client.open_by_key(spreadsheet_id)
+    spreadsheet = _get_spreadsheet(client, spreadsheet_id)
+    
+    _throttle_api()
     worksheet = spreadsheet.get_worksheet(sheet_index)
     
+    _throttle_api()
     records = worksheet.get_all_records()
     if not records:
         # Tenta pelo menos pegar o header para criar um DF vazio com colunas
+        _throttle_api()
         header = worksheet.row_values(1)
         if header:
             return pd.DataFrame(columns=header)
@@ -154,15 +222,19 @@ def write_dataframe_to_sheet(df, spreadsheet_id, sheet_index=0):
     Limpa a aba e escreve header + dados.
     """
     client = get_gspread_client()
-    spreadsheet = client.open_by_key(spreadsheet_id)
+    spreadsheet = _get_spreadsheet(client, spreadsheet_id)
+    
+    _throttle_api()
     worksheet = spreadsheet.get_worksheet(sheet_index)
     
     # Limpar todo o conteúdo existente
+    _throttle_api()
     worksheet.clear()
     
     if df.empty:
         # Se vazio, escrever apenas o header
         if len(df.columns) > 0:
+            _throttle_api()
             worksheet.update([df.columns.tolist()], value_input_option="RAW")
         return
     
@@ -178,6 +250,7 @@ def write_dataframe_to_sheet(df, spreadsheet_id, sheet_index=0):
     # Montar dados: header + linhas
     data = [df_str.columns.tolist()] + df_str.values.tolist()
     
+    _throttle_api()
     worksheet.update(data, value_input_option="RAW")
 
 
@@ -187,14 +260,16 @@ def read_settings_from_sheet(spreadsheet_id=SETTINGS_ID):
     Lê as configurações (settings) da aba 'Settings' (JSON Legacy).
     """
     client = get_gspread_client()
-    spreadsheet = client.open_by_key(spreadsheet_id)
+    spreadsheet = _get_spreadsheet(client, spreadsheet_id)
     
     try:
+        _throttle_api()
         worksheet = spreadsheet.worksheet("Settings")
     except gspread.WorksheetNotFound:
         return None
     
     # Settings são armazenadas como JSON na célula A1
+    _throttle_api()
     cell_value = worksheet.acell("A1").value
     if cell_value:
         try:
@@ -209,30 +284,35 @@ def write_settings_to_sheet(settings_dict, spreadsheet_id=SETTINGS_ID):
     Salva as configurações (settings) na aba 'Settings'.
     """
     client = get_gspread_client()
-    spreadsheet = client.open_by_key(spreadsheet_id)
+    spreadsheet = _get_spreadsheet(client, spreadsheet_id)
     worksheet = _get_or_create_worksheet(spreadsheet, "Settings")
     
     # Limpar e escrever JSON
+    _throttle_api()
     worksheet.clear()
     json_str = json.dumps(settings_dict, indent=2, ensure_ascii=False)
+    _throttle_api()
     worksheet.update_acell("A1", json_str)
 
 
 def _get_or_create_worksheet(spreadsheet, title, rows=100, cols=20):
     """Retorna a worksheet pelo título, criando-a se não existir."""
     try:
+        _throttle_api()
         return spreadsheet.worksheet(title)
     except gspread.WorksheetNotFound:
+        _throttle_api()
         return spreadsheet.add_worksheet(title=title, rows=rows, cols=cols)
 
 @retry_on_quota()
 def read_categories(spreadsheet_id=SETTINGS_ID):
     """Lê a lista de categorias da aba 'Categorias'."""
     client = get_gspread_client()
-    spreadsheet = client.open_by_key(spreadsheet_id)
+    spreadsheet = _get_spreadsheet(client, spreadsheet_id)
     ws = _get_or_create_worksheet(spreadsheet, "Categorias")
     
     # Lê coluna A (pula header se houver, mas vamos assumir lista simples ou com header 'Categoria')
+    _throttle_api()
     vals = ws.col_values(1)
     if not vals:
         return []
@@ -248,10 +328,12 @@ def read_categories(spreadsheet_id=SETTINGS_ID):
 def save_categories(categories_list, spreadsheet_id=SETTINGS_ID):
     """Salva a lista de categorias na aba 'Categorias'."""
     client = get_gspread_client()
-    spreadsheet = client.open_by_key(spreadsheet_id)
+    spreadsheet = _get_spreadsheet(client, spreadsheet_id)
     ws = _get_or_create_worksheet(spreadsheet, "Categorias")
     
+    _throttle_api()
     ws.clear()
+    _throttle_api()
     data = [["Categoria"]] + [[c] for c in categories_list]
     ws.update(data, value_input_option="RAW")
 
@@ -259,9 +341,10 @@ def save_categories(categories_list, spreadsheet_id=SETTINGS_ID):
 def read_budgets(spreadsheet_id=SETTINGS_ID):
     """Lê a tabela de metas da aba 'Metas'."""
     client = get_gspread_client()
-    spreadsheet = client.open_by_key(spreadsheet_id)
+    spreadsheet = _get_spreadsheet(client, spreadsheet_id)
     ws = _get_or_create_worksheet(spreadsheet, "Metas")
     
+    _throttle_api()
     records = ws.get_all_records()
     if not records:
         return pd.DataFrame(columns=["Categoria", "Valor", "Mes", "Ano"])
@@ -283,11 +366,13 @@ def read_budgets(spreadsheet_id=SETTINGS_ID):
 def save_budgets(df, spreadsheet_id=SETTINGS_ID):
     """Salva o DataFrame de metas na aba 'Metas'."""
     client = get_gspread_client()
-    spreadsheet = client.open_by_key(spreadsheet_id)
+    spreadsheet = _get_spreadsheet(client, spreadsheet_id)
     ws = _get_or_create_worksheet(spreadsheet, "Metas")
     
+    _throttle_api()
     ws.clear()
     if df.empty:
+        _throttle_api()
         ws.update([["Categoria", "Valor", "Mes", "Ano", "Tipo"]], value_input_option="RAW")
         return
 
@@ -302,6 +387,7 @@ def save_budgets(df, spreadsheet_id=SETTINGS_ID):
     df_save["Tipo"] = df_save["Tipo"].fillna("Orçamento").astype(str)
     
     data = [df_save.columns.tolist()] + df_save.values.tolist()
+    _throttle_api()
     ws.update(data, value_input_option="RAW")
 
 
@@ -309,9 +395,10 @@ def save_budgets(df, spreadsheet_id=SETTINGS_ID):
 def read_classification_dataset(spreadsheet_id=CLASSIFICATION_ID):
     """Lê o dataset de treinamento da aba 'classificacao_categoria'."""
     client = get_gspread_client()
-    spreadsheet = client.open_by_key(spreadsheet_id)
+    spreadsheet = _get_spreadsheet(client, spreadsheet_id)
     ws = _get_or_create_worksheet(spreadsheet, "classificacao_categoria")
     
+    _throttle_api()
     records = ws.get_all_records()
     if not records:
         return pd.DataFrame(columns=["Descricao", "Categoria"])
@@ -329,15 +416,18 @@ def read_classification_dataset(spreadsheet_id=CLASSIFICATION_ID):
 def append_classification(description, category, amount=None, date=None, spreadsheet_id=CLASSIFICATION_ID):
     """Adiciona um novo exemplo de treinamento na aba 'classificacao_categoria'."""
     client = get_gspread_client()
-    spreadsheet = client.open_by_key(spreadsheet_id)
+    spreadsheet = _get_spreadsheet(client, spreadsheet_id)
     ws = _get_or_create_worksheet(spreadsheet, "classificacao_categoria")
     
     # Se a aba estiver vazia, adicionar header
+    _throttle_api()
     if not ws.get_all_values():
+        _throttle_api()
         ws.append_row(["Descricao", "Categoria", "Data", "Valor"])
         
     val_amount = str(amount).replace(".", ",") if amount is not None else ""
     val_date = str(date) if date is not None else ""
-        
+    
+    _throttle_api()
     ws.append_row([str(description), str(category), val_date, val_amount])
 
